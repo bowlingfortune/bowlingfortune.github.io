@@ -121,6 +121,74 @@ function showError(message: string, row: number, column: number, cursorIndex?: n
   }
 }
 
+function createHistogram(result: GameResult): string {
+  const { histogram } = result.stats;
+  const actualScore = result.score;
+
+  const width = 600;
+  const height = 300;
+  const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const maxCount = Math.max(...histogram.map(bin => bin.count));
+  const minScore = result.stats.min;
+  const maxScore = result.stats.max;
+
+  const barWidth = Math.max(2, chartWidth / histogram.length);
+
+  const bars = histogram.map((bin, i) => {
+    const x = padding.left + (i * chartWidth) / histogram.length;
+    const barHeight = (bin.count / maxCount) * chartHeight;
+    const y = padding.top + chartHeight - barHeight;
+    const isActual = bin.score === actualScore;
+
+    return `<rect
+      x="${x}"
+      y="${y}"
+      width="${barWidth}"
+      height="${barHeight}"
+      fill="${isActual ? '#fbbf24' : '#60a5fa'}"
+      opacity="${isActual ? '1' : '0.7'}"
+    >
+      <title>Score: ${bin.score}\nCount: ${bin.count.toLocaleString()}\nFrequency: ${(bin.frequency * 100).toFixed(2)}%</title>
+    </rect>`;
+  }).join('');
+
+  const yAxisTicks = 5;
+  const yLabels = Array.from({ length: yAxisTicks + 1 }, (_, i) => {
+    const value = Math.round((maxCount / yAxisTicks) * i);
+    const y = padding.top + chartHeight - (i * chartHeight) / yAxisTicks;
+    return `
+      <line x1="${padding.left - 5}" y1="${y}" x2="${padding.left}" y2="${y}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${padding.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#94a3b8">${value.toLocaleString()}</text>
+    `;
+  }).join('');
+
+  const xAxisTicks = Math.min(10, Math.ceil((maxScore - minScore) / 10));
+  const xLabels = Array.from({ length: xAxisTicks + 1 }, (_, i) => {
+    const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
+    const x = padding.left + (i * chartWidth) / xAxisTicks;
+    return `
+      <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
+    `;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" class="histogram">
+      <rect x="0" y="0" width="${width}" height="${height}" fill="rgba(15, 23, 42, 0.5)" />
+      ${bars}
+      <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
+      <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left + chartWidth}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
+      ${yLabels}
+      ${xLabels}
+      <text x="${padding.left + chartWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600">Score</text>
+      <text x="${15}" y="${padding.top + chartHeight / 2}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600" transform="rotate(-90, 15, ${padding.top + chartHeight / 2})">Count</text>
+    </svg>
+  `;
+}
+
 function renderResults(results: GameResult[]): void {
   feedback.className = 'output';
   if (results.length === 0) {
@@ -138,8 +206,20 @@ function renderResults(results: GameResult[]): void {
         <article class="result-card">
           <h2>Game ${gameNumber}</h2>
           <p><strong>Actual score:</strong> ${result.score}</p>
+
+          <details open>
+            <summary>Score Distribution</summary>
+            <div class="histogram-container">
+              ${createHistogram(result)}
+              <p class="histogram-note">
+                <span style="color: #fbbf24;">■</span> Your actual score
+                <span style="color: #60a5fa; margin-left: 1rem;">■</span> Other permutations
+              </p>
+            </div>
+          </details>
+
           <details>
-            <summary>Frame Permutation Statistics</summary>
+            <summary>Statistics</summary>
             <dl class="stats">
               <dt>Permutations analyzed:</dt>
               <dd>${result.stats.permutationCount.toLocaleString()}</dd>

@@ -172,6 +172,35 @@ button:active {
   font-family: 'Fira Code', 'Source Code Pro', monospace;
 }
 
+.histogram-container {
+  margin-top: 1rem;
+}
+
+.histogram {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  overflow: visible;
+}
+
+.histogram rect {
+  transition: opacity 0.2s ease;
+}
+
+.histogram rect:hover {
+  opacity: 1 !important;
+  stroke: #e2e8f0;
+  stroke-width: 1.5;
+}
+
+.histogram-note {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  text-align: center;
+}
+
 @media (max-width: 600px) {
   #app {
     padding: 1.5rem 1.25rem;

@@ -466,6 +466,13 @@ export interface PermutationStats {
   median: number;
   mode: number[];
   permutationCount: number;
+  histogram: HistogramBin[];
+}
+
+export interface HistogramBin {
+  score: number;
+  count: number;
+  frequency: number;
 }
 
 /**
@@ -540,12 +547,23 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
   }
   mode.sort((a, b) => a - b);
 
+  const histogram: HistogramBin[] = [];
+  for (const [score, count] of frequencyMap) {
+    histogram.push({
+      score,
+      count,
+      frequency: count / scores.length
+    });
+  }
+  histogram.sort((a, b) => a.score - b.score);
+
   return {
     min,
     max,
     mean: Math.round(mean * 100) / 100,
     median,
     mode,
-    permutationCount: permutations.length
+    permutationCount: permutations.length,
+    histogram
   };
 }
