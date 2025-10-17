@@ -1,9 +1,10 @@
 import './style.css';
-import { parseGame, scoreGame, ParseError, Frame } from './bowling';
+import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
 
 type GameResult = {
   frames: Frame[];
   score: number;
+  stats: PermutationStats;
 };
 
 const buttonPhrases = [
@@ -82,7 +83,8 @@ submitButton.addEventListener('click', () => {
       return;
     }
     const score = scoreGame(parseResult.frames);
-    results.push({ frames: parseResult.frames, score });
+    const stats = calculatePermutationStats(parseResult.frames);
+    results.push({ frames: parseResult.frames, score, stats });
   }
 
   renderResults(results);
@@ -126,10 +128,36 @@ function renderResults(results: GameResult[]): void {
   const cards = results
     .map((result, index) => {
       const gameNumber = index + 1;
+      const modeStr = result.stats.mode.length === 1
+        ? result.stats.mode[0].toString()
+        : `${result.stats.mode.join(', ')} (multimodal)`;
+
       return `
         <article class="result-card">
           <h2>Game ${gameNumber}</h2>
-          <p><strong>Final score:</strong> ${result.score}</p>
+          <p><strong>Actual score:</strong> ${result.score}</p>
+          <details>
+            <summary>Frame Permutation Statistics</summary>
+            <dl class="stats">
+              <dt>Permutations analyzed:</dt>
+              <dd>${result.stats.permutationCount.toLocaleString()}</dd>
+
+              <dt>Minimum score:</dt>
+              <dd>${result.stats.min}</dd>
+
+              <dt>Maximum score:</dt>
+              <dd>${result.stats.max}</dd>
+
+              <dt>Mean score:</dt>
+              <dd>${result.stats.mean}</dd>
+
+              <dt>Median score:</dt>
+              <dd>${result.stats.median}</dd>
+
+              <dt>Mode:</dt>
+              <dd>${modeStr}</dd>
+            </dl>
+          </details>
         </article>
       `;
     })

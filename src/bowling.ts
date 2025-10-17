@@ -458,3 +458,94 @@ export function scoreGame(frames: Frame[]): number {
   }
   return score;
 }
+
+export interface PermutationStats {
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+  mode: number[];
+  permutationCount: number;
+}
+
+/**
+ * Generate all permutations of frames 1-9 using Heap's algorithm.
+ * Frame 10 is kept fixed at the end.
+ */
+function generatePermutations(frames: Frame[]): Frame[][] {
+  if (frames.length !== 10) {
+    throw new Error('Expected exactly 10 frames');
+  }
+
+  const first9 = frames.slice(0, 9);
+  const frame10 = frames[9];
+  const permutations: Frame[][] = [];
+
+  function heapPermute(arr: Frame[], n: number): void {
+    if (n === 1) {
+      permutations.push([...arr, frame10]);
+      return;
+    }
+
+    for (let i = 0; i < n; i++) {
+      heapPermute(arr, n - 1);
+      if (n % 2 === 0) {
+        [arr[i], arr[n - 1]] = [arr[n - 1], arr[i]];
+      } else {
+        [arr[0], arr[n - 1]] = [arr[n - 1], arr[0]];
+      }
+    }
+  }
+
+  heapPermute(first9, first9.length);
+  return permutations;
+}
+
+/**
+ * Calculate statistics for all permutations of frames 1-9.
+ */
+export function calculatePermutationStats(frames: Frame[]): PermutationStats {
+  const permutations = generatePermutations(frames);
+  const scores = permutations.map(perm => scoreGame(perm));
+
+  scores.sort((a, b) => a - b);
+
+  const min = scores[0];
+  const max = scores[scores.length - 1];
+  const sum = scores.reduce((acc, val) => acc + val, 0);
+  const mean = sum / scores.length;
+
+  const midIndex = Math.floor(scores.length / 2);
+  const median = scores.length % 2 === 0
+    ? (scores[midIndex - 1] + scores[midIndex]) / 2
+    : scores[midIndex];
+
+  const frequencyMap = new Map<number, number>();
+  for (const score of scores) {
+    frequencyMap.set(score, (frequencyMap.get(score) || 0) + 1);
+  }
+
+  let maxFrequency = 0;
+  for (const freq of frequencyMap.values()) {
+    if (freq > maxFrequency) {
+      maxFrequency = freq;
+    }
+  }
+
+  const mode: number[] = [];
+  for (const [score, freq] of frequencyMap) {
+    if (freq === maxFrequency) {
+      mode.push(score);
+    }
+  }
+  mode.sort((a, b) => a - b);
+
+  return {
+    min,
+    max,
+    mean: Math.round(mean * 100) / 100,
+    median,
+    mode,
+    permutationCount: permutations.length
+  };
+}
