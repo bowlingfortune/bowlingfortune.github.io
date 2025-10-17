@@ -130,6 +130,15 @@ button:active {
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+.result-card.series-summary {
+  background: rgba(59, 130, 246, 0.15);
+  border: 2px solid rgba(96, 165, 250, 0.4);
+}
+
+.result-card.series-summary h2 {
+  color: #60a5fa;
+}
+
 .result-card h2 {
   margin-top: 0;
   margin-bottom: 0.5rem;

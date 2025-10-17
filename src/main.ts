@@ -242,12 +242,88 @@ function getNarrative(result: GameResult): string {
   return interpretation;
 }
 
+function renderSeriesSummary(results: GameResult[]): string {
+  if (results.length < 2) return '';
+
+  const totalScore = results.reduce((sum, r) => sum + r.score, 0);
+  const avgScore = Math.round((totalScore / results.length) * 100) / 100;
+
+  const avgPercentile = Math.round((results.reduce((sum, r) => sum + r.stats.actualPercentile, 0) / results.length) * 100) / 100;
+  const avgZScore = Math.round((results.reduce((sum, r) => sum + r.stats.zScore, 0) / results.length) * 100) / 100;
+  const avgExpectedDiff = Math.round((results.reduce((sum, r) => sum + (r.score - r.stats.median), 0) / results.length) * 100) / 100;
+
+  const avgMedian = Math.round((results.reduce((sum, r) => sum + r.stats.median, 0) / results.length) * 100) / 100;
+  const avgMean = Math.round((results.reduce((sum, r) => sum + r.stats.mean, 0) / results.length) * 100) / 100;
+  const avgStdDev = Math.round((results.reduce((sum, r) => sum + r.stats.standardDeviation, 0) / results.length) * 100) / 100;
+
+  const expectedDiffStr = avgExpectedDiff >= 0 ? `+${avgExpectedDiff}` : `${avgExpectedDiff}`;
+
+  // Series narrative
+  let seriesNarrative = '';
+  if (Math.abs(avgZScore) < 0.5) {
+    seriesNarrative = 'Across this series, your frame orders were <strong>typical</strong> — no significant luck or unluck.';
+  } else if (avgZScore >= 1.5) {
+    seriesNarrative = 'Across this series, you had <strong>notably favorable</strong> frame sequences. Lady Luck was on your side!';
+  } else if (avgZScore <= -1.5) {
+    seriesNarrative = 'Across this series, you had <strong>notably unfavorable</strong> frame sequences. The odds worked against you.';
+  } else if (avgZScore > 0.5) {
+    seriesNarrative = 'Across this series, your frame orders were <strong>slightly favorable</strong> overall.';
+  } else {
+    seriesNarrative = 'Across this series, your frame orders were <strong>slightly unfavorable</strong> overall.';
+  }
+
+  if (avgPercentile >= 70) {
+    seriesNarrative += ' You consistently scored in the upper ranges of possible outcomes.';
+  } else if (avgPercentile <= 30) {
+    seriesNarrative += ' You consistently scored in the lower ranges of possible outcomes.';
+  }
+
+  return `
+    <article class="result-card series-summary">
+      <h2>Series Summary (${results.length} Games)</h2>
+
+      <div class="narrative">
+        <p>${seriesNarrative}</p>
+      </div>
+
+      <dl class="stats">
+        <dt>Total score:</dt>
+        <dd>${totalScore}</dd>
+
+        <dt>Average score per game:</dt>
+        <dd>${avgScore}</dd>
+
+        <dt>Average percentile:</dt>
+        <dd>${avgPercentile}%</dd>
+
+        <dt>Average z-score:</dt>
+        <dd>${avgZScore}</dd>
+
+        <dt>Average expected pins +/-:</dt>
+        <dd>${expectedDiffStr}</dd>
+
+        <dt>Average median:</dt>
+        <dd>${avgMedian}</dd>
+
+        <dt>Average mean:</dt>
+        <dd>${avgMean}</dd>
+
+        <dt>Average std. deviation:</dt>
+        <dd>${avgStdDev}</dd>
+      </dl>
+    </article>
+  `;
+}
+
 function renderResults(results: GameResult[]): void {
   feedback.className = 'output';
   if (results.length === 0) {
     feedback.innerHTML = '';
     return;
   }
+
+  const seriesSummary = renderSeriesSummary(results);
+
   const cards = results
     .map((result, index) => {
       const gameNumber = index + 1;
@@ -319,5 +395,5 @@ function renderResults(results: GameResult[]): void {
     })
     .join('');
 
-  feedback.innerHTML = `<section class="results">${cards}</section>`;
+  feedback.innerHTML = `<section class="results">${seriesSummary}${cards}</section>`;
 }
