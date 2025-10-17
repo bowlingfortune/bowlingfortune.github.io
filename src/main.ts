@@ -39,6 +39,7 @@ app.innerHTML = `
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
   <div class="textarea-footer">
+    <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
     <button id="example-btn" type="button" class="secondary-btn">Try an example</button>
   </div>
   <div id="scores-help" class="description">
@@ -61,10 +62,11 @@ app.innerHTML = `
 
 const textarea = document.querySelector<HTMLTextAreaElement>('#scores-input');
 const submitButton = document.querySelector<HTMLButtonElement>('#submit');
+const clearButton = document.querySelector<HTMLButtonElement>('#clear-btn');
 const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
 
-if (!textarea || !submitButton || !exampleButton || !feedback) {
+if (!textarea || !submitButton || !clearButton || !exampleButton || !feedback) {
   throw new Error('Failed to initialise UI elements');
 }
 
@@ -76,6 +78,12 @@ const examples = [
 ];
 
 let exampleIndex = 0;
+
+clearButton.addEventListener('click', () => {
+  textarea.value = '';
+  feedback.innerHTML = '';
+  textarea.focus();
+});
 
 exampleButton.addEventListener('click', () => {
   textarea.value = examples[exampleIndex];
