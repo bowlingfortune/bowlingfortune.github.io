@@ -391,34 +391,108 @@ function renderSeriesSummary(results: GameResult[]): string {
   const totalScore = results.reduce((sum, r) => sum + r.score, 0);
   const avgScore = Math.round((totalScore / results.length) * 100) / 100;
 
-  const avgPercentile = Math.round((results.reduce((sum, r) => sum + r.stats.actualPercentile, 0) / results.length) * 100) / 100;
-  const avgZScore = Math.round((results.reduce((sum, r) => sum + r.stats.zScore, 0) / results.length) * 100) / 100;
-  const avgExpectedDiff = Math.round((results.reduce((sum, r) => sum + (r.score - r.stats.median), 0) / results.length) * 100) / 100;
+  // Compute series-level statistics from distribution
+  const distribution = computeSeriesDistribution(results);
+  const histogram: Array<{ score: number; count: number }> = [];
+  for (const [score, count] of distribution) {
+    histogram.push({ score, count });
+  }
+  histogram.sort((a, b) => a.score - b.score);
 
-  const avgMedian = Math.round((results.reduce((sum, r) => sum + r.stats.median, 0) / results.length) * 100) / 100;
-  const avgMean = Math.round((results.reduce((sum, r) => sum + r.stats.mean, 0) / results.length) * 100) / 100;
-  const avgStdDev = Math.round((results.reduce((sum, r) => sum + r.stats.standardDeviation, 0) / results.length) * 100) / 100;
+  const totalCombinations = Array.from(distribution.values()).reduce((sum, count) => sum + count, 0);
 
-  const expectedDiffStr = avgExpectedDiff >= 0 ? `+${avgExpectedDiff}` : `${avgExpectedDiff}`;
+  // Calculate series min and max
+  const seriesMin = histogram[0].score;
+  const seriesMax = histogram[histogram.length - 1].score;
+
+  // Calculate series mean
+  let weightedSum = 0;
+  for (const bin of histogram) {
+    weightedSum += bin.score * bin.count;
+  }
+  const seriesMean = weightedSum / totalCombinations;
+
+  // Calculate series median
+  let cumulativeCount = 0;
+  let seriesMedian = 0;
+  for (const bin of histogram) {
+    cumulativeCount += bin.count;
+    if (cumulativeCount >= totalCombinations / 2) {
+      seriesMedian = bin.score;
+      break;
+    }
+  }
+
+  // Calculate series percentile
+  const scoresAtOrBelow = histogram
+    .filter(bin => bin.score <= totalScore)
+    .reduce((sum, bin) => sum + bin.count, 0);
+  const seriesPercentile = Math.round((scoresAtOrBelow / totalCombinations) * 100 * 100) / 100;
+
+  // Calculate series standard deviation
+  let varianceSum = 0;
+  for (const bin of histogram) {
+    varianceSum += Math.pow(bin.score - seriesMean, 2) * bin.count;
+  }
+  const seriesStdDev = Math.sqrt(varianceSum / totalCombinations);
+
+  // Calculate series z-score
+  const seriesZScore = seriesStdDev === 0 ? 0 : (totalScore - seriesMean) / seriesStdDev;
+
+  // Calculate series skewness
+  let cubedDeviationsSum = 0;
+  for (const bin of histogram) {
+    cubedDeviationsSum += Math.pow((bin.score - seriesMean) / seriesStdDev, 3) * bin.count;
+  }
+  const seriesSkewness = seriesStdDev === 0 ? 0 : cubedDeviationsSum / totalCombinations;
+
+  // Calculate series mode
+  let maxFrequency = 0;
+  for (const bin of histogram) {
+    if (bin.count > maxFrequency) {
+      maxFrequency = bin.count;
+    }
+  }
+  const seriesMode: number[] = [];
+  for (const bin of histogram) {
+    if (bin.count === maxFrequency) {
+      seriesMode.push(bin.score);
+    }
+  }
+
+  const expectedDiff = totalScore - seriesMedian;
+  const expectedDiffStr = expectedDiff >= 0 ? `+${expectedDiff}` : `${expectedDiff}`;
+
+  const modeStr = seriesMode.length === 1
+    ? seriesMode[0].toString()
+    : `${seriesMode.join(', ')} (multimodal)`;
 
   // Series narrative
   let seriesNarrative = '';
-  if (Math.abs(avgZScore) < 0.5) {
+  if (Math.abs(seriesZScore) < 0.5) {
     seriesNarrative = 'Across this series, your frame orders were <strong>typical</strong> — no significant luck or unluck.';
-  } else if (avgZScore >= 1.5) {
-    seriesNarrative = 'Across this series, you had <strong>notably favorable</strong> frame sequences. Lady Luck was on your side!';
-  } else if (avgZScore <= -1.5) {
-    seriesNarrative = 'Across this series, you had <strong>notably unfavorable</strong> frame sequences. The odds worked against you.';
-  } else if (avgZScore > 0.5) {
+  } else if (seriesZScore >= 2) {
+    seriesNarrative = 'Across this series, you had <strong>exceptionally favorable</strong> frame sequences. Lady Luck was on your side!';
+  } else if (seriesZScore <= -2) {
+    seriesNarrative = 'Across this series, you had <strong>exceptionally unfavorable</strong> frame sequences. The odds worked against you.';
+  } else if (seriesZScore >= 1) {
+    seriesNarrative = 'Across this series, you had <strong>notably favorable</strong> frame sequences.';
+  } else if (seriesZScore <= -1) {
+    seriesNarrative = 'Across this series, you had <strong>notably unfavorable</strong> frame sequences.';
+  } else if (seriesZScore > 0) {
     seriesNarrative = 'Across this series, your frame orders were <strong>slightly favorable</strong> overall.';
   } else {
     seriesNarrative = 'Across this series, your frame orders were <strong>slightly unfavorable</strong> overall.';
   }
 
-  if (avgPercentile >= 70) {
-    seriesNarrative += ' You consistently scored in the upper ranges of possible outcomes.';
-  } else if (avgPercentile <= 30) {
-    seriesNarrative += ' You consistently scored in the lower ranges of possible outcomes.';
+  if (seriesPercentile >= 95) {
+    seriesNarrative += ' You scored in the <strong>top 5%</strong> of all possible series combinations.';
+  } else if (seriesPercentile >= 75) {
+    seriesNarrative += ' You scored in the <strong>top quartile</strong> of possible combinations.';
+  } else if (seriesPercentile <= 5) {
+    seriesNarrative += ' You scored in the <strong>bottom 5%</strong> of all possible combinations.';
+  } else if (seriesPercentile <= 25) {
+    seriesNarrative += ' You scored in the <strong>bottom quartile</strong> of possible combinations.';
   }
 
   return `
@@ -445,23 +519,35 @@ function renderSeriesSummary(results: GameResult[]): string {
         <dt>Average score per game:</dt>
         <dd>${avgScore}</dd>
 
-        <dt>Average percentile:</dt>
-        <dd>${avgPercentile}%</dd>
+        <dt>Percentile:</dt>
+        <dd>${seriesPercentile}%</dd>
 
-        <dt>Average z-score:</dt>
-        <dd>${avgZScore}</dd>
+        <dt>Z-score:</dt>
+        <dd>${Math.round(seriesZScore * 100) / 100}</dd>
 
-        <dt>Average expected pins +/-:</dt>
+        <dt>Expected Pins +/-:</dt>
         <dd>${expectedDiffStr}</dd>
 
-        <dt>Average median:</dt>
-        <dd>${avgMedian}</dd>
+        <dt>Minimum score:</dt>
+        <dd>${seriesMin}</dd>
 
-        <dt>Average mean:</dt>
-        <dd>${avgMean}</dd>
+        <dt>Maximum score:</dt>
+        <dd>${seriesMax}</dd>
 
-        <dt>Average std. deviation:</dt>
-        <dd>${avgStdDev}</dd>
+        <dt>Mean score:</dt>
+        <dd>${Math.round(seriesMean * 100) / 100}</dd>
+
+        <dt>Median score:</dt>
+        <dd>${seriesMedian}</dd>
+
+        <dt>Standard deviation:</dt>
+        <dd>${Math.round(seriesStdDev * 100) / 100}</dd>
+
+        <dt>Skewness:</dt>
+        <dd>${Math.round(seriesSkewness * 100) / 100}</dd>
+
+        <dt>Mode:</dt>
+        <dd>${modeStr}</dd>
       </dl>
     </article>
   `;
