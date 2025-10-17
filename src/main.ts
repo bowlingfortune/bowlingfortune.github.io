@@ -137,7 +137,7 @@ function showError(message: string, row: number, column: number, cursorIndex?: n
 }
 
 function createHistogram(result: GameResult): string {
-  const { histogram } = result.stats;
+  const { histogram, median } = result.stats;
   const actualScore = result.score;
 
   const width = 600;
@@ -170,6 +170,14 @@ function createHistogram(result: GameResult): string {
     </rect>`;
   }).join('');
 
+  // Add median line
+  const medianX = padding.left + ((median - minScore) / (maxScore - minScore)) * chartWidth;
+  const medianLine = `
+    <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
+          stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
+    <text x="${medianX}" y="${padding.top - 5}" text-anchor="middle" font-size="11" fill="#ec4899" font-weight="600">Median</text>
+  `;
+
   const yAxisTicks = 5;
   const yLabels = Array.from({ length: yAxisTicks + 1 }, (_, i) => {
     const value = Math.round((maxCount / yAxisTicks) * i);
@@ -194,6 +202,7 @@ function createHistogram(result: GameResult): string {
     <svg viewBox="0 0 ${width} ${height}" class="histogram">
       <rect x="0" y="0" width="${width}" height="${height}" fill="rgba(15, 23, 42, 0.5)" />
       ${bars}
+      ${medianLine}
       <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
       <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left + chartWidth}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
       ${yLabels}
@@ -217,44 +226,50 @@ function renderResults(results: GameResult[]): void {
         ? result.stats.mode[0].toString()
         : `${result.stats.mode.join(', ')} (multimodal)`;
 
+      const expectedPinsDiff = result.score - result.stats.median;
+      const expectedPinsStr = expectedPinsDiff >= 0
+        ? `+${expectedPinsDiff}`
+        : `${expectedPinsDiff}`;
+
       return `
         <article class="result-card">
           <h2>Game ${gameNumber}</h2>
           <p><strong>Actual score:</strong> ${result.score}</p>
 
-          <details open>
-            <summary>Score Distribution</summary>
-            <div class="histogram-container">
-              ${createHistogram(result)}
-              <p class="histogram-note">
-                <span style="color: #fbbf24;">■</span> Your actual score
-                <span style="color: #60a5fa; margin-left: 1rem;">■</span> Other permutations
-              </p>
-            </div>
-          </details>
+          <div class="histogram-container">
+            ${createHistogram(result)}
+            <p class="histogram-note">
+              <span style="color: #fbbf24;">■</span> Your actual score
+              <span style="color: #60a5fa; margin-left: 1rem;">■</span> Other permutations
+              <span style="color: #ec4899; margin-left: 1rem;">- -</span> Median
+            </p>
+          </div>
 
-          <details>
-            <summary>Statistics</summary>
-            <dl class="stats">
-              <dt>Permutations analyzed:</dt>
-              <dd>${result.stats.permutationCount.toLocaleString()}</dd>
+          <dl class="stats">
+            <dt>Permutations analyzed:</dt>
+            <dd>${result.stats.permutationCount.toLocaleString()}</dd>
 
-              <dt>Minimum score:</dt>
-              <dd>${result.stats.min}</dd>
+            <dt>Percentile:</dt>
+            <dd>${result.stats.actualPercentile}%</dd>
 
-              <dt>Maximum score:</dt>
-              <dd>${result.stats.max}</dd>
+            <dt>Expected Pins +/-:</dt>
+            <dd>${expectedPinsStr}</dd>
 
-              <dt>Mean score:</dt>
-              <dd>${result.stats.mean}</dd>
+            <dt>Minimum score:</dt>
+            <dd>${result.stats.min}</dd>
 
-              <dt>Median score:</dt>
-              <dd>${result.stats.median}</dd>
+            <dt>Maximum score:</dt>
+            <dd>${result.stats.max}</dd>
 
-              <dt>Mode:</dt>
-              <dd>${modeStr}</dd>
-            </dl>
-          </details>
+            <dt>Mean score:</dt>
+            <dd>${result.stats.mean}</dd>
+
+            <dt>Median score:</dt>
+            <dd>${result.stats.median}</dd>
+
+            <dt>Mode:</dt>
+            <dd>${modeStr}</dd>
+          </dl>
         </article>
       `;
     })

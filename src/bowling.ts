@@ -467,6 +467,7 @@ export interface PermutationStats {
   mode: number[];
   permutationCount: number;
   histogram: HistogramBin[];
+  actualPercentile: number;
 }
 
 export interface HistogramBin {
@@ -514,6 +515,7 @@ function generatePermutations(frames: Frame[]): Frame[][] {
 export function calculatePermutationStats(frames: Frame[]): PermutationStats {
   const permutations = generatePermutations(frames);
   const scores = permutations.map(perm => scoreGame(perm));
+  const actualScore = scoreGame(frames);
 
   scores.sort((a, b) => a - b);
 
@@ -557,6 +559,10 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
   }
   histogram.sort((a, b) => a.score - b.score);
 
+  // Calculate percentile: percentage of scores less than or equal to actual
+  const scoresAtOrBelow = scores.filter(s => s <= actualScore).length;
+  const actualPercentile = Math.round((scoresAtOrBelow / scores.length) * 100 * 100) / 100;
+
   return {
     min,
     max,
@@ -564,6 +570,7 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
     median,
     mode,
     permutationCount: permutations.length,
-    histogram
+    histogram,
+    actualPercentile
   };
 }
