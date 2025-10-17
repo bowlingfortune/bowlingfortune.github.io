@@ -1,6 +1,8 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
 
+declare const __BUILD_TIMESTAMP__: string;
+
 type GameResult = {
   frames: Frame[];
   score: number;
@@ -25,16 +27,6 @@ if (!app) {
   throw new Error('Failed to find app container');
 }
 
-const buildDate = new Date();
-const chicagoTime = new Date(buildDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-const year = chicagoTime.getFullYear();
-const month = String(chicagoTime.getMonth() + 1).padStart(2, '0');
-const day = String(chicagoTime.getDate()).padStart(2, '0');
-const hours = String(chicagoTime.getHours()).padStart(2, '0');
-const minutes = String(chicagoTime.getMinutes()).padStart(2, '0');
-const seconds = String(chicagoTime.getSeconds()).padStart(2, '0');
-const buildTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
 app.innerHTML = `
   <h1>Bowling Fortune Teller</h1>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
@@ -53,7 +45,7 @@ app.innerHTML = `
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: ${buildTime} CT</p>
+    <p>Build: ${__BUILD_TIMESTAMP__} CT</p>
   </footer>
 `;
 
