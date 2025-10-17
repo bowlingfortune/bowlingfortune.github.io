@@ -16,7 +16,7 @@
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: 2025-10-17 07:15:59 CT</p>
+    <p>Build: 2025-10-17 07:17:15 CT</p>
   </footer>
 `;const w=document.querySelector("#scores-input"),C=document.querySelector("#submit"),v=document.querySelector("#feedback");if(!w||!C||!v)throw new Error("Failed to initialise UI elements");let P=0;function O(){if(Math.random()<Z){C.textContent=K;return}C.textContent=A[P],P=(P+1)%A.length}O();setInterval(O,3e4);C.addEventListener("click",()=>{if(!w.value.trim()){R("Please provide at least one game.",1,1);return}const t=w.value.replace(/\r/g,"").split(`
 `),s=[];for(let e=0;e<t.length;e+=1){const i=t[e];if(!i.trim()){R(`Game ${e+1} is empty. Each line must contain exactly ten frames.`,e+1,1);return}const n=_(i);if(n.kind==="error"){J(n,e,t);return}const r=q(n.frames),o=W(n.frames);s.push({frames:n.frames,score:r,stats:o})}te(s)});function J(t,s,e){const i=s+1,n=`Row ${i}, column ${t.column}: ${t.message}`,r=Y(e,s,t.column);R(n,i,t.column,r)}function Y(t,s,e){let i=0;for(let n=0;n<s;n+=1)i+=t[n].length+1;return i+(e-1)}function R(t,s,e,i){if(v.innerHTML="",v.className="error",v.textContent=t,w.focus(),typeof i=="number")w.setSelectionRange(i,i);else{const n=w.value.replace(/\r/g,"").split(`
