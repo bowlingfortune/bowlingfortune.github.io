@@ -11,7 +11,9 @@ const buttonPhrases = [
   'Tell My Bowling Fortune',
   'Glimpse Into My Future.. er, Past',
   'Peer Into the Multiverse',
-  'Clutch Or Not?'
+  'Clutch Or Not?',
+  'My mom said I\'m pretty good.',
+  'What oil pattern is this? Badger?'
 ];
 
 const rarePhrase = 'Tell Me How Bad I Fucked Up';
@@ -60,7 +62,7 @@ function cycleButtonLabel(): void {
 }
 
 cycleButtonLabel();
-setInterval(cycleButtonLabel, 4000);
+setInterval(cycleButtonLabel, 30000);
 
 submitButton.addEventListener('click', () => {
   if (!textarea.value.trim()) {
