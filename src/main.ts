@@ -25,16 +25,15 @@ if (!app) {
   throw new Error('Failed to find app container');
 }
 
-const buildTime = new Date().toLocaleString('en-US', {
-  timeZone: 'America/Chicago',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false
-});
+const buildDate = new Date();
+const chicagoTime = new Date(buildDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+const year = chicagoTime.getFullYear();
+const month = String(chicagoTime.getMonth() + 1).padStart(2, '0');
+const day = String(chicagoTime.getDate()).padStart(2, '0');
+const hours = String(chicagoTime.getHours()).padStart(2, '0');
+const minutes = String(chicagoTime.getMinutes()).padStart(2, '0');
+const seconds = String(chicagoTime.getSeconds()).padStart(2, '0');
+const buildTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
 app.innerHTML = `
   <h1>Bowling Fortune Teller</h1>
