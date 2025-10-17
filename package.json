@@ -1,0 +1,25 @@
+{
+  "name": "bowlingfortune.github.io",
+  "version": "1.0.0",
+  "description": "Bowling fortune teller web app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "bowling",
+    "statistics",
+    "github-pages"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vitest": "^3.2.4"
+  }
+}
