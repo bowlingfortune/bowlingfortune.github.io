@@ -468,6 +468,9 @@ export interface PermutationStats {
   permutationCount: number;
   histogram: HistogramBin[];
   actualPercentile: number;
+  zScore: number;
+  skewness: number;
+  standardDeviation: number;
 }
 
 export interface HistogramBin {
@@ -563,6 +566,17 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
   const scoresAtOrBelow = scores.filter(s => s <= actualScore).length;
   const actualPercentile = Math.round((scoresAtOrBelow / scores.length) * 100 * 100) / 100;
 
+  // Calculate standard deviation
+  const variance = scores.reduce((acc, score) => acc + Math.pow(score - mean, 2), 0) / scores.length;
+  const standardDeviation = Math.sqrt(variance);
+
+  // Calculate z-score (how many standard deviations from the mean)
+  const zScore = standardDeviation === 0 ? 0 : (actualScore - mean) / standardDeviation;
+
+  // Calculate skewness (measure of asymmetry)
+  const cubedDeviations = scores.reduce((acc, score) => acc + Math.pow((score - mean) / standardDeviation, 3), 0);
+  const skewness = standardDeviation === 0 ? 0 : cubedDeviations / scores.length;
+
   return {
     min,
     max,
@@ -571,6 +585,9 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
     mode,
     permutationCount: permutations.length,
     histogram,
-    actualPercentile
+    actualPercentile,
+    zScore: Math.round(zScore * 100) / 100,
+    skewness: Math.round(skewness * 100) / 100,
+    standardDeviation: Math.round(standardDeviation * 100) / 100
   };
 }

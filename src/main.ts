@@ -205,6 +205,43 @@ function createHistogram(result: GameResult): string {
   `;
 }
 
+function getNarrative(result: GameResult): string {
+  const { zScore, actualPercentile, skewness } = result.stats;
+  const expectedPinsDiff = result.score - result.stats.median;
+
+  let interpretation = '';
+
+  // Z-score interpretation
+  if (Math.abs(zScore) < 0.5) {
+    interpretation = 'Your score was <strong>typical</strong> — right in line with what frame order randomness would produce.';
+  } else if (zScore >= 2) {
+    interpretation = 'Your score was <strong>exceptionally high</strong> — you got very lucky with your frame order!';
+  } else if (zScore <= -2) {
+    interpretation = 'Your score was <strong>exceptionally low</strong> — you got very unlucky with your frame order.';
+  } else if (zScore > 1) {
+    interpretation = 'Your score was <strong>notably above average</strong> — you benefited from a favorable frame sequence.';
+  } else if (zScore < -1) {
+    interpretation = 'Your score was <strong>notably below average</strong> — your frame order worked against you.';
+  } else if (zScore > 0) {
+    interpretation = 'Your score was <strong>slightly above average</strong> — a bit luckier than typical.';
+  } else {
+    interpretation = 'Your score was <strong>slightly below average</strong> — a bit unluckier than typical.';
+  }
+
+  // Add context about position in distribution
+  if (actualPercentile >= 95) {
+    interpretation += ' You scored in the <strong>top 5%</strong> of all possible orderings.';
+  } else if (actualPercentile >= 75) {
+    interpretation += ' You scored in the <strong>top quartile</strong> of possible orderings.';
+  } else if (actualPercentile <= 5) {
+    interpretation += ' You scored in the <strong>bottom 5%</strong> of all possible orderings.';
+  } else if (actualPercentile <= 25) {
+    interpretation += ' You scored in the <strong>bottom quartile</strong> of possible orderings.';
+  }
+
+  return interpretation;
+}
+
 function renderResults(results: GameResult[]): void {
   feedback.className = 'output';
   if (results.length === 0) {
@@ -223,10 +260,16 @@ function renderResults(results: GameResult[]): void {
         ? `+${expectedPinsDiff}`
         : `${expectedPinsDiff}`;
 
+      const narrative = getNarrative(result);
+
       return `
         <article class="result-card">
           <h2>Game ${gameNumber}</h2>
           <p><strong>Actual score:</strong> ${result.score}</p>
+
+          <div class="narrative">
+            <p>${narrative}</p>
+          </div>
 
           <div class="histogram-container">
             ${createHistogram(result)}
@@ -244,6 +287,9 @@ function renderResults(results: GameResult[]): void {
             <dt>Percentile:</dt>
             <dd>${result.stats.actualPercentile}%</dd>
 
+            <dt>Z-score:</dt>
+            <dd>${result.stats.zScore}</dd>
+
             <dt>Expected Pins +/-:</dt>
             <dd>${expectedPinsStr}</dd>
 
@@ -258,6 +304,12 @@ function renderResults(results: GameResult[]): void {
 
             <dt>Median score:</dt>
             <dd>${result.stats.median}</dd>
+
+            <dt>Standard deviation:</dt>
+            <dd>${result.stats.standardDeviation}</dd>
+
+            <dt>Skewness:</dt>
+            <dd>${result.stats.skewness}</dd>
 
             <dt>Mode:</dt>
             <dd>${modeStr}</dd>

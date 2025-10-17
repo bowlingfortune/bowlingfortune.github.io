@@ -87,11 +87,8 @@ textarea:focus {
 }
 
 button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
+  display: block;
+  margin: 1.5rem auto 0;
   padding: 0.85rem 1.5rem;
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   color: white;
@@ -147,6 +144,21 @@ button:active {
 .result-card p {
   margin: 0;
   line-height: 1.6;
+}
+
+.result-card .narrative {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #60a5fa;
+  border-radius: 0.5rem;
+}
+
+.result-card .narrative p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
 .result-card dl.stats {
