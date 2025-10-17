@@ -350,15 +350,8 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
     <text x="${medianX}" y="${padding.top - 5}" text-anchor="middle" font-size="11" fill="#ec4899" font-weight="600">Median</text>
   `;
 
-  const yAxisTicks = 5;
-  const yLabels = Array.from({ length: yAxisTicks + 1 }, (_, i) => {
-    const value = Math.round((maxCount / yAxisTicks) * i);
-    const y = padding.top + chartHeight - (i * chartHeight) / yAxisTicks;
-    return `
-      <line x1="${padding.left - 5}" y1="${y}" x2="${padding.left}" y2="${y}" stroke="#94a3b8" stroke-width="1" />
-      <text x="${padding.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#94a3b8">${value.toLocaleString()}</text>
-    `;
-  }).join('');
+  // Skip Y-axis labels for series (numbers get too large)
+  const yLabels = '';
 
   const xAxisTicks = Math.min(10, Math.ceil((maxScore - minScore) / 20));
   const xLabels = Array.from({ length: xAxisTicks + 1 }, (_, i) => {
@@ -380,7 +373,6 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
       ${yLabels}
       ${xLabels}
       <text x="${padding.left + chartWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600">Series Score</text>
-      <text x="${15}" y="${padding.top + chartHeight / 2}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600" transform="rotate(-90, 15, ${padding.top + chartHeight / 2})">Combinations</text>
     </svg>
   `;
 }
