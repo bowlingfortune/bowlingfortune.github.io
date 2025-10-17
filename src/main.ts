@@ -15,7 +15,14 @@ const buttonPhrases = [
   'Peer Into the Multiverse',
   'Clutch Or Not?',
   'My mom said I\'m pretty good.',
-  'What oil pattern is this? Badger?'
+  'What oil pattern is this? Badger?',
+  'Calculate my shame',
+  'How lucky was I, really?',
+  'Did I deserve this score?',
+  'Explain my misery',
+  'Tell me I\'m special',
+  'Judge my frame order',
+  'Was that skill or luck?'
 ];
 
 const rarePhrase = 'Tell Me How Bad I Fucked Up';
@@ -31,6 +38,9 @@ app.innerHTML = `
   <h1>Bowling Fortune Teller</h1>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
+  <div class="textarea-footer">
+    <button id="example-btn" type="button" class="secondary-btn">Try an example</button>
+  </div>
   <div id="scores-help" class="description">
     <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
     <p>Enter one game per line.</p>
@@ -51,11 +61,27 @@ app.innerHTML = `
 
 const textarea = document.querySelector<HTMLTextAreaElement>('#scores-input');
 const submitButton = document.querySelector<HTMLButtonElement>('#submit');
+const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
 
-if (!textarea || !submitButton || !feedback) {
+if (!textarea || !submitButton || !exampleButton || !feedback) {
   throw new Error('Failed to initialise UI elements');
 }
+
+const examples = [
+  '9/ X 81 7/ X X 9- 90 X XX6',
+  'X X X X X X X X X XXX',
+  'X 9/ 54 X 8/ 9- X 81 9/ X8/',
+  '9/ X 81 7/ X X 9- 90 X XX6\nX X X X X X X X X XXX\n7/ 6- X 81 9/ X 7- X X X90'
+];
+
+let exampleIndex = 0;
+
+exampleButton.addEventListener('click', () => {
+  textarea.value = examples[exampleIndex];
+  exampleIndex = (exampleIndex + 1) % examples.length;
+  textarea.focus();
+});
 
 let phraseIndex = 0;
 function cycleButtonLabel(): void {
@@ -103,6 +129,23 @@ function processScores() {
 }
 
 submitButton.addEventListener('click', processScores);
+
+// Keyboard shortcuts
+textarea.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    processScores();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (feedback.innerHTML) {
+      feedback.innerHTML = '';
+      textarea.focus();
+    }
+  }
+});
 
 // Check for scores in URL on load
 window.addEventListener('DOMContentLoaded', () => {
@@ -226,27 +269,48 @@ function createHistogram(result: GameResult): string {
   `;
 }
 
+function getAchievementEmoji(percentile: number, median: number, actualScore: number): string {
+  // Top 5% - exceptional
+  if (percentile >= 95) return '🏆';
+
+  // Exactly median - perfectly average
+  if (actualScore === median) return '🎯';
+
+  // Bottom 5% - exceptionally unlucky
+  if (percentile <= 5) return '💀';
+
+  // Top quartile - lucky
+  if (percentile >= 75) return '🍀';
+
+  // Bottom quartile - unlucky
+  if (percentile <= 25) return '😅';
+
+  // Normal range - typical
+  return '📊';
+}
+
 function getNarrative(result: GameResult): string {
-  const { zScore, actualPercentile, skewness } = result.stats;
+  const { zScore, actualPercentile, skewness, median } = result.stats;
   const expectedPinsDiff = result.score - result.stats.median;
 
-  let interpretation = '';
+  const emoji = getAchievementEmoji(actualPercentile, median, result.score);
+  let interpretation = `${emoji} `;
 
   // Z-score interpretation
   if (Math.abs(zScore) < 0.5) {
-    interpretation = 'Your score was <strong>typical</strong> — right in line with what frame order randomness would produce.';
+    interpretation += 'Your score was <strong>typical</strong> — right in line with what frame order randomness would produce.';
   } else if (zScore >= 2) {
-    interpretation = 'Your score was <strong>exceptionally high</strong> — you got very lucky with your frame order!';
+    interpretation += 'Your score was <strong>exceptionally high</strong> — you got very lucky with your frame order!';
   } else if (zScore <= -2) {
-    interpretation = 'Your score was <strong>exceptionally low</strong> — you got very unlucky with your frame order.';
+    interpretation += 'Your score was <strong>exceptionally low</strong> — you got very unlucky with your frame order.';
   } else if (zScore > 1) {
-    interpretation = 'Your score was <strong>notably above average</strong> — you benefited from a favorable frame sequence.';
+    interpretation += 'Your score was <strong>notably above average</strong> — you benefited from a favorable frame sequence.';
   } else if (zScore < -1) {
-    interpretation = 'Your score was <strong>notably below average</strong> — your frame order worked against you.';
+    interpretation += 'Your score was <strong>notably below average</strong> — your frame order worked against you.';
   } else if (zScore > 0) {
-    interpretation = 'Your score was <strong>slightly above average</strong> — a bit luckier than typical.';
+    interpretation += 'Your score was <strong>slightly above average</strong> — a bit luckier than typical.';
   } else {
-    interpretation = 'Your score was <strong>slightly below average</strong> — a bit unluckier than typical.';
+    interpretation += 'Your score was <strong>slightly below average</strong> — a bit unluckier than typical.';
   }
 
   // Add context about position in distribution
