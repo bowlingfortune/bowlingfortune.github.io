@@ -2,15 +2,17 @@
   <h1>Bowling Fortune Teller</h1>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
-  <p id="scores-help" class="description">
-    Enter frame-by-frame scores. Use spaces or commas to separate frames.<br />
-    Enter one game per line.<br />
-    Valid characters:<br />
-    * 0-9<br />
-    * /<br />
-    * X<br />
-    * - (counts the same as 0)
-  </p>
+  <div id="scores-help" class="description">
+    <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
+    <p>Enter one game per line.</p>
+    <p>Valid characters:</p>
+    <ul>
+      <li>0-9</li>
+      <li>/</li>
+      <li>X</li>
+      <li>- (counts the same as 0)</li>
+    </ul>
+  </div>
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">

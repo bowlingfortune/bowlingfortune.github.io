@@ -33,15 +33,31 @@ h1 {
   color: #fbbf24;
 }
 
-p.description {
+.description {
   line-height: 1.6;
   margin-bottom: 1.5rem;
   color: #cbd5f5;
-  font-family: 'Fira Code', 'Source Code Pro', monospace;
   background: rgba(15, 23, 42, 0.6);
   padding: 1rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.description p {
+  margin: 0.5rem 0;
+}
+
+.description p:first-child {
+  margin-top: 0;
+}
+
+.description ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.description li {
+  margin: 0.25rem 0;
 }
 
 label {
