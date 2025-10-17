@@ -24,7 +24,8 @@ const buttonPhrases = [
   'Judge my frame order',
   'Was that skill or luck?',
   'Is this thing scratch-and-sniff?',
-  'Like a 50/50 raffle, but you never win'
+  'Like a 50/50 raffle, but you never win',
+  'We lost by 3 pins, but it definitely wasn\'t my fault... right?'
 ];
 
 const rarePhrase = 'Tell Me How Bad I Fucked Up';
