@@ -71,7 +71,9 @@ function cycleButtonLabel(): void {
 cycleButtonLabel();
 setInterval(cycleButtonLabel, 30000);
 
-submitButton.addEventListener('click', () => {
+let currentScoresInput = '';
+
+function processScores() {
   if (!textarea.value.trim()) {
     showError('Please provide at least one game.', 1, 1);
     return;
@@ -96,7 +98,26 @@ submitButton.addEventListener('click', () => {
     results.push({ frames: parseResult.frames, score, stats });
   }
 
+  currentScoresInput = textarea.value;
   renderResults(results);
+}
+
+submitButton.addEventListener('click', processScores);
+
+// Check for scores in URL on load
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const encodedScores = params.get('scores');
+
+  if (encodedScores) {
+    try {
+      const decodedScores = atob(encodedScores);
+      textarea.value = decodedScores;
+      processScores();
+    } catch (e) {
+      console.error('Failed to decode scores from URL', e);
+    }
+  }
 });
 
 function showParseError(error: ParseError, rowIndex: number, lines: string[]): void {
@@ -446,12 +467,58 @@ function renderSeriesSummary(results: GameResult[]): string {
   `;
 }
 
+function generateShareableLink(): string {
+  const encodedScores = btoa(currentScoresInput);
+  const url = new URL(window.location.href);
+  url.search = `?scores=${encodeURIComponent(encodedScores)}`;
+  return url.toString();
+}
+
+function copyLinkToClipboard() {
+  const link = generateShareableLink();
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('Link copied!');
+  }).catch((err) => {
+    console.error('Failed to copy link', err);
+    showToast('Failed to copy link');
+  });
+}
+
+function showToast(message: string) {
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 2000);
+}
+
 function renderResults(results: GameResult[]): void {
   feedback.className = 'output';
   if (results.length === 0) {
     feedback.innerHTML = '';
     return;
   }
+
+  const copyButton = `
+    <button type="button" class="copy-link-btn" data-copy-link>
+      Copy link 🔗
+    </button>
+  `;
 
   const cards = results
     .map((result, index) => {
@@ -526,5 +593,22 @@ function renderResults(results: GameResult[]): void {
 
   const seriesSummary = renderSeriesSummary(results);
 
-  feedback.innerHTML = `<section class="results">${cards}${seriesSummary}</section>`;
+  feedback.innerHTML = `
+    <section class="results">
+      <div class="results-header">
+        ${copyButton}
+      </div>
+      ${cards}
+      ${seriesSummary}
+      <div class="results-footer">
+        ${copyButton}
+      </div>
+    </section>
+  `;
+
+  // Add event listeners for copy buttons
+  const copyButtons = feedback.querySelectorAll('[data-copy-link]');
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', copyLinkToClipboard);
+  });
 }
