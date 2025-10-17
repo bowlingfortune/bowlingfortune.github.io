@@ -28,7 +28,10 @@ const buttonPhrases = [
   'We lost by 3 pins, but it definitely wasn\'t my fault... right?'
 ];
 
-const rarePhrase = 'Tell Me How Bad I Fucked Up';
+const rarePhrases = [
+  'Tell Me How Bad I Fucked Up',
+  'RATE MUH BALLS'
+];
 const rareChance = 0.001; // 0.1%
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -98,7 +101,8 @@ let phraseIndex = 0;
 function cycleButtonLabel(): void {
   const useRare = Math.random() < rareChance;
   if (useRare) {
-    submitButton.textContent = rarePhrase;
+    const rareIndex = Math.floor(Math.random() * rarePhrases.length);
+    submitButton.textContent = rarePhrases[rareIndex];
     return;
   }
   submitButton.textContent = buttonPhrases[phraseIndex];
