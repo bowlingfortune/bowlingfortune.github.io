@@ -22,7 +22,9 @@ const buttonPhrases = [
   'Explain my misery',
   'Tell me I\'m special',
   'Judge my frame order',
-  'Was that skill or luck?'
+  'Was that skill or luck?',
+  'Is this thing scratch-and-sniff?',
+  'Like a 50/50 raffle, but you never win'
 ];
 
 const rarePhrase = 'Tell Me How Bad I Fucked Up';
