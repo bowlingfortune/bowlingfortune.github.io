@@ -25,6 +25,17 @@ if (!app) {
   throw new Error('Failed to find app container');
 }
 
+const buildTime = new Date().toLocaleString('en-US', {
+  timeZone: 'America/Chicago',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+});
+
 app.innerHTML = `
   <h1>Bowling Fortune Teller</h1>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
@@ -40,6 +51,9 @@ app.innerHTML = `
   </p>
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
+  <footer class="version">
+    <p>Build: ${buildTime} CT</p>
+  </footer>
 `;
 
 const textarea = document.querySelector<HTMLTextAreaElement>('#scores-input');
