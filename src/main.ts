@@ -242,6 +242,128 @@ function getNarrative(result: GameResult): string {
   return interpretation;
 }
 
+function computeSeriesDistribution(results: GameResult[]): Map<number, number> {
+  // Compute the distribution of series scores by convolving individual game distributions
+  let distribution = new Map<number, number>();
+
+  // Start with the first game's distribution
+  for (const bin of results[0].stats.histogram) {
+    distribution.set(bin.score, bin.count);
+  }
+
+  // Convolve with each subsequent game's distribution
+  for (let i = 1; i < results.length; i++) {
+    const newDistribution = new Map<number, number>();
+
+    for (const [score1, count1] of distribution) {
+      for (const bin of results[i].stats.histogram) {
+        const combinedScore = score1 + bin.score;
+        const combinedCount = count1 * bin.count;
+        newDistribution.set(combinedScore, (newDistribution.get(combinedScore) || 0) + combinedCount);
+      }
+    }
+
+    distribution = newDistribution;
+  }
+
+  return distribution;
+}
+
+function createSeriesHistogram(results: GameResult[], totalScore: number): string {
+  const distribution = computeSeriesDistribution(results);
+
+  // Convert to sorted array for histogram
+  const histogram: Array<{ score: number; count: number }> = [];
+  for (const [score, count] of distribution) {
+    histogram.push({ score, count });
+  }
+  histogram.sort((a, b) => a.score - b.score);
+
+  const width = 600;
+  const height = 300;
+  const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const maxCount = Math.max(...histogram.map(bin => bin.count));
+  const minScore = histogram[0].score;
+  const maxScore = histogram[histogram.length - 1].score;
+
+  // Calculate median for series
+  const totalCombinations = Array.from(distribution.values()).reduce((sum, count) => sum + count, 0);
+  let cumulativeCount = 0;
+  let seriesMedian = 0;
+  for (const bin of histogram) {
+    cumulativeCount += bin.count;
+    if (cumulativeCount >= totalCombinations / 2) {
+      seriesMedian = bin.score;
+      break;
+    }
+  }
+
+  const barWidth = Math.max(2, chartWidth / histogram.length);
+
+  const bars = histogram.map((bin, i) => {
+    const x = padding.left + (i * chartWidth) / histogram.length;
+    const barHeight = (bin.count / maxCount) * chartHeight;
+    const y = padding.top + chartHeight - barHeight;
+    const isActual = bin.score === totalScore;
+
+    return `<rect
+      x="${x}"
+      y="${y}"
+      width="${barWidth}"
+      height="${barHeight}"
+      fill="${isActual ? '#fbbf24' : '#60a5fa'}"
+      opacity="${isActual ? '1' : '0.7'}"
+    >
+      <title>Series Score: ${bin.score}\nCombinations: ${bin.count.toLocaleString()}</title>
+    </rect>`;
+  }).join('');
+
+  // Add median line
+  const medianX = padding.left + ((seriesMedian - minScore) / (maxScore - minScore)) * chartWidth;
+  const medianLine = `
+    <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
+          stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
+    <text x="${medianX}" y="${padding.top - 5}" text-anchor="middle" font-size="11" fill="#ec4899" font-weight="600">Median</text>
+  `;
+
+  const yAxisTicks = 5;
+  const yLabels = Array.from({ length: yAxisTicks + 1 }, (_, i) => {
+    const value = Math.round((maxCount / yAxisTicks) * i);
+    const y = padding.top + chartHeight - (i * chartHeight) / yAxisTicks;
+    return `
+      <line x1="${padding.left - 5}" y1="${y}" x2="${padding.left}" y2="${y}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${padding.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#94a3b8">${value.toLocaleString()}</text>
+    `;
+  }).join('');
+
+  const xAxisTicks = Math.min(10, Math.ceil((maxScore - minScore) / 20));
+  const xLabels = Array.from({ length: xAxisTicks + 1 }, (_, i) => {
+    const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
+    const x = padding.left + (i * chartWidth) / xAxisTicks;
+    return `
+      <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
+    `;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" class="histogram">
+      <rect x="0" y="0" width="${width}" height="${height}" fill="rgba(15, 23, 42, 0.5)" />
+      ${bars}
+      ${medianLine}
+      <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
+      <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left + chartWidth}" y2="${padding.top + chartHeight}" stroke="#94a3b8" stroke-width="2" />
+      ${yLabels}
+      ${xLabels}
+      <text x="${padding.left + chartWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600">Series Score</text>
+      <text x="${15}" y="${padding.top + chartHeight / 2}" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600" transform="rotate(-90, 15, ${padding.top + chartHeight / 2})">Combinations</text>
+    </svg>
+  `;
+}
+
 function renderSeriesSummary(results: GameResult[]): string {
   if (results.length < 2) return '';
 
@@ -286,6 +408,15 @@ function renderSeriesSummary(results: GameResult[]): string {
         <p>${seriesNarrative}</p>
       </div>
 
+      <div class="histogram-container">
+        ${createSeriesHistogram(results, totalScore)}
+        <p class="histogram-note">
+          <span style="color: #fbbf24;">■</span> Your actual series score
+          <span style="color: #60a5fa; margin-left: 1rem;">■</span> Other combinations
+          <span style="color: #ec4899; margin-left: 1rem;">- -</span> Median
+        </p>
+      </div>
+
       <dl class="stats">
         <dt>Total score:</dt>
         <dd>${totalScore}</dd>
@@ -321,8 +452,6 @@ function renderResults(results: GameResult[]): void {
     feedback.innerHTML = '';
     return;
   }
-
-  const seriesSummary = renderSeriesSummary(results);
 
   const cards = results
     .map((result, index) => {
@@ -395,5 +524,7 @@ function renderResults(results: GameResult[]): void {
     })
     .join('');
 
-  feedback.innerHTML = `<section class="results">${seriesSummary}${cards}</section>`;
+  const seriesSummary = renderSeriesSummary(results);
+
+  feedback.innerHTML = `<section class="results">${cards}${seriesSummary}</section>`;
 }
