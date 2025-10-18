@@ -44,7 +44,7 @@ X X X X X X X X X XXX
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: 2025-10-18 07:32:12 CT</p>
+    <p>Build: 2025-10-18 07:34:18 CT</p>
   </footer>
 
   <!-- Save Modal -->
@@ -302,7 +302,7 @@ Combinations: ${u.count.toLocaleString()}</title>
             </p>
           </div>
 
-          ${mt(s.frames)}
+          <!-- ${mt(s.frames)} -->
 
           <dl class="stats">
             <dt>Permutations analyzed:</dt>

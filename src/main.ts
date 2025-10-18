@@ -1293,7 +1293,7 @@ function renderResults(results: GameResult[]): void {
             </p>
           </div>
 
-          ${renderFrameImpact(result.frames)}
+          <!-- ${renderFrameImpact(result.frames)} -->
 
           <dl class="stats">
             <dt>Permutations analyzed:</dt>
