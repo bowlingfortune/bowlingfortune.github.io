@@ -478,7 +478,7 @@ function loadSavedGame(id: string) {
   if (game) {
     textarea.value = game.scores;
     closeSidebar();
-    textarea.focus();
+    submitButton.click();
     showToast('Game loaded!');
   }
 }
