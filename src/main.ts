@@ -34,6 +34,50 @@ const rarePhrases = [
 ];
 const rareChance = 0.001; // 0.1%
 
+// Example scenarios with descriptions
+const exampleScenarios = [
+  {
+    name: 'Perfect Game (300)',
+    description: 'The ultimate achievement - 12 strikes in a row',
+    score: 'X X X X X X X X X XXX'
+  },
+  {
+    name: 'Lucky Game',
+    description: 'Actual score much higher than median - very favorable frame order',
+    score: 'X X X 9/ X X 81 X X X9/'
+  },
+  {
+    name: 'Unlucky Game',
+    description: 'Actual score lower than median - unfavorable frame order',
+    score: '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9'
+  },
+  {
+    name: 'Average Game',
+    description: 'Typical performance around 150',
+    score: '9/ X 81 7/ X X 9- 90 X XX6'
+  },
+  {
+    name: 'Low Score Game',
+    description: 'Rough day at the lanes - lots of open frames',
+    score: '52 7- 43 8- 61 72 54 6- 81 7-'
+  },
+  {
+    name: 'Multiple Games Series',
+    description: 'Three-game series showing different performances',
+    score: '9/ X 81 7/ X X 9- 90 X XX6\nX X X X X X X X X XXX\n7/ 6- X 81 9/ X 7- X X X90'
+  },
+  {
+    name: 'Clutch Performance',
+    description: 'Strong finish with strikes in the 10th',
+    score: '7/ 8/ 81 9- 72 X 9/ 8- X XXX'
+  },
+  {
+    name: 'All Spares Game',
+    description: 'Consistent spare shooting - no strikes, no open frames',
+    score: '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/9'
+  }
+];
+
 const app = document.querySelector<HTMLDivElement>('#app');
 
 if (!app) {
@@ -89,52 +133,6 @@ const feedback = document.querySelector<HTMLDivElement>('#feedback');
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback) {
   throw new Error('Failed to initialise UI elements');
 }
-
-// Example scenarios with descriptions
-const exampleScenarios = [
-  {
-    name: 'Perfect Game (300)',
-    description: 'The ultimate achievement - 12 strikes in a row',
-    score: 'X X X X X X X X X XXX'
-  },
-  {
-    name: 'Lucky Game',
-    description: 'Actual score much higher than median - very favorable frame order',
-    score: 'X X X 9/ X X 81 X X X9/'
-  },
-  {
-    name: 'Unlucky Game',
-    description: 'Actual score lower than median - unfavorable frame order',
-    score: '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9'
-  },
-  {
-    name: 'Average Game',
-    description: 'Typical performance around 150',
-    score: '9/ X 81 7/ X X 9- 90 X XX6'
-  },
-  {
-    name: 'Low Score Game',
-    description: 'Rough day at the lanes - lots of open frames',
-    score: '52 7- 43 8- 61 72 54 6- 81 7-'
-  },
-  {
-    name: 'Multiple Games Series',
-    description: 'Three-game series showing different performances',
-    score: '9/ X 81 7/ X X 9- 90 X XX6\nX X X X X X X X X XXX\n7/ 6- X 81 9/ X 7- X X X90'
-  },
-  {
-    name: 'Clutch Performance',
-    description: 'Strong finish with strikes in the 10th',
-    score: '7/ 8/ 81 9- 72 X 9/ 8- X XXX'
-  },
-  {
-    name: 'All Spares Game',
-    description: 'Consistent spare shooting - no strikes, no open frames',
-    score: '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/9'
-  }
-];
-
-let currentExampleIndex = 0;
 
 clearButton.addEventListener('click', () => {
   textarea.value = '';
