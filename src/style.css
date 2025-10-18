@@ -852,13 +852,28 @@ button:active {
 }
 
 .hero-frames,
-.villain-frames {
+.villain-frames,
+.neutral-frames {
   margin-bottom: 2rem;
 }
 
 .hero-frames:last-child,
-.villain-frames:last-child {
+.villain-frames:last-child,
+.neutral-frames:last-child {
   margin-bottom: 0;
+}
+
+.neutral-frames {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.neutral-frames .section-explanation {
+  font-size: 1rem;
+  color: #cbd5e1;
 }
 
 .frame-impact-section h4 {

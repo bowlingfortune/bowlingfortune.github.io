@@ -1155,12 +1155,18 @@ function renderFrameImpact(frames: Frame[]): string {
   const frameScores = calculateFrameScores(frames);
   const impactAnalysis = analyzeFramePositionalImpact(frames);
 
-  // Sort by position benefit to find luckiest and unluckiest frames
-  const sortedByBenefit = [...impactAnalysis].sort((a, b) => b.positionBenefit - a.positionBenefit);
+  // Set thresholds for what counts as significantly lucky/unlucky
+  const LUCKY_THRESHOLD = 3;    // +3 pins or more above average
+  const UNLUCKY_THRESHOLD = -3; // -3 pins or more below average
 
-  // Get top 3 luckiest and bottom 3 unluckiest
-  const luckiest = sortedByBenefit.slice(0, 3);
-  const unluckiest = sortedByBenefit.slice(-3).reverse();
+  // Filter frames that meet thresholds, sorted by position benefit
+  const luckiest = impactAnalysis
+    .filter(impact => impact.positionBenefit >= LUCKY_THRESHOLD)
+    .sort((a, b) => b.positionBenefit - a.positionBenefit);
+
+  const unluckiest = impactAnalysis
+    .filter(impact => impact.positionBenefit <= UNLUCKY_THRESHOLD)
+    .sort((a, b) => a.positionBenefit - b.positionBenefit);
 
   // Render complete scorecard
   function renderCompleteScorecard(): string {
@@ -1196,27 +1202,43 @@ function renderFrameImpact(frames: Frame[]): string {
     `;
   }
 
+  const luckySection = luckiest.length > 0 ? `
+    <div class="hero-frames">
+      <h4>🍀 Luckiest Frames (±${LUCKY_THRESHOLD}+ pins above average)</h4>
+      <p class="section-explanation">These frames scored more than average due to favorable positioning in the game order</p>
+      <div class="scorecard-frames">
+        ${luckiest.map(impact => renderImpactFrame(impact, '🍀')).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const unluckySection = unluckiest.length > 0 ? `
+    <div class="villain-frames">
+      <h4>💔 Unluckiest Frames (±${Math.abs(UNLUCKY_THRESHOLD)}+ pins below average)</h4>
+      <p class="section-explanation">These frames scored less than average due to unfavorable positioning in the game order</p>
+      <div class="scorecard-frames">
+        ${unluckiest.map(impact => renderImpactFrame(impact, '💔')).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const neutralMessage = luckiest.length === 0 && unluckiest.length === 0 ? `
+    <div class="neutral-frames">
+      <p class="section-explanation">
+        No frames had significant positional impact. All frames scored close to their positional average!
+      </p>
+    </div>
+  ` : '';
+
   return `
     <div class="frame-impact-section">
       <h3>Frame Impact Analysis</h3>
 
       ${renderCompleteScorecard()}
 
-      <div class="hero-frames">
-        <h4>🍀 Luckiest Frames (Best Positional Benefit)</h4>
-        <p class="section-explanation">These frames scored more than average due to favorable positioning in the game order</p>
-        <div class="scorecard-frames">
-          ${luckiest.map(impact => renderImpactFrame(impact, '🍀')).join('')}
-        </div>
-      </div>
-
-      <div class="villain-frames">
-        <h4>💔 Unluckiest Frames (Worst Positional Benefit)</h4>
-        <p class="section-explanation">These frames scored less than average due to unfavorable positioning in the game order</p>
-        <div class="scorecard-frames">
-          ${unluckiest.map(impact => renderImpactFrame(impact, '💔')).join('')}
-        </div>
-      </div>
+      ${luckySection}
+      ${unluckySection}
+      ${neutralMessage}
     </div>
   `;
 }
