@@ -74,3 +74,146 @@ describe('calculatePermutationStats', () => {
     expect(stats.max).toBe(204);
   });
 });
+
+describe('example scenarios', () => {
+  test('Low Score Game - should parse successfully', () => {
+    const input = '52 7- 43 8- 61 72 54 6- 81 7-';
+    const result = parseGame(input);
+
+    if (result.kind === 'error') {
+      throw new Error(`Failed to parse: ${result.message} at column ${result.column}`);
+    }
+
+    expect(result.kind).toBe('success');
+    expect(result.frames).toHaveLength(10);
+
+    // Verify frame structure
+    expect(result.frames[0].rolls).toHaveLength(2); // 52
+    expect(result.frames[1].rolls).toHaveLength(2); // 7-
+    expect(result.frames[2].rolls).toHaveLength(2); // 43
+    expect(result.frames[3].rolls).toHaveLength(2); // 8-
+    expect(result.frames[4].rolls).toHaveLength(2); // 61
+    expect(result.frames[5].rolls).toHaveLength(2); // 72
+    expect(result.frames[6].rolls).toHaveLength(2); // 54
+    expect(result.frames[7].rolls).toHaveLength(2); // 6-
+    expect(result.frames[8].rolls).toHaveLength(2); // 81
+    expect(result.frames[9].rolls).toHaveLength(2); // 7- (10th frame, no strike or spare)
+
+    const score = scoreGame(result.frames);
+    // Score calculation: 7+7+7+8+7+9+9+6+9+7 = 76
+    expect(score).toBe(76);
+
+    // Verify stats calculation works without errors
+    const stats = calculatePermutationStats(result.frames);
+    expect(stats.permutationCount).toBe(362880); // 9! permutations
+    expect(stats.min).toBeGreaterThan(0);
+    // For a game with all open frames, all permutations yield the same score
+    // This is expected - the order doesn't matter when there are no strikes or spares
+    expect(stats.max).toBeGreaterThanOrEqual(stats.min);
+    expect(stats.median).toBeGreaterThanOrEqual(stats.min);
+    expect(stats.median).toBeLessThanOrEqual(stats.max);
+    expect(stats.min).toBe(76);
+    expect(stats.max).toBe(76);
+    expect(stats.median).toBe(76);
+  });
+
+  test('Perfect Game (300)', () => {
+    const input = 'X X X X X X X X X XXX';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBe(300);
+    }
+  });
+
+  test('Lucky Game', () => {
+    const input = 'X X X 9/ X X 81 X X X9/';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBeGreaterThan(0);
+    }
+  });
+
+  test('Unlucky Game', () => {
+    const input = '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBe(190);
+    }
+  });
+
+  test('Average Game', () => {
+    const input = '9/ X 81 7/ X X 9- 90 X XX6';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBe(190);
+    }
+  });
+
+  test('Clutch Performance', () => {
+    const input = '7/ 8/ 81 9- 72 X 9/ 8- X XXX';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBeGreaterThan(0);
+    }
+  });
+
+  test('All Spares Game', () => {
+    const input = '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/9';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.frames).toHaveLength(10);
+      expect(scoreGame(result.frames)).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('edge cases', () => {
+  test('all open frames result in same score for all permutations', () => {
+    const input = '12 34 54 23 43 62 11 22 33 44';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      const stats = calculatePermutationStats(result.frames);
+      // All permutations should yield the same score since there are no strikes or spares
+      expect(stats.min).toBe(stats.max);
+      expect(stats.median).toBe(stats.min);
+      expect(stats.mean).toBe(stats.min);
+      // All scores should be in the same bin
+      expect(stats.histogram).toHaveLength(1);
+      expect(stats.histogram[0].count).toBe(stats.permutationCount);
+    }
+  });
+
+  test('single strike creates variation in scores', () => {
+    const input = 'X 12 34 54 23 43 62 11 22 33';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      const stats = calculatePermutationStats(result.frames);
+      // With one strike, permutations should yield different scores
+      expect(stats.max).toBeGreaterThan(stats.min);
+    }
+  });
+
+  test('single spare creates variation in scores', () => {
+    const input = '1/ 12 34 54 23 43 62 11 22 33';
+    const result = parseGame(input);
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      const stats = calculatePermutationStats(result.frames);
+      // With one spare, permutations should yield different scores
+      expect(stats.max).toBeGreaterThan(stats.min);
+    }
+  });
+});

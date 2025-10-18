@@ -382,14 +382,19 @@ function createHistogram(result: GameResult): string {
   }).join('');
 
   const xAxisTicks = Math.min(10, Math.ceil((maxScore - minScore) / 10));
-  const xLabels = Array.from({ length: xAxisTicks + 1 }, (_, i) => {
-    const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
-    const x = padding.left + (i * chartWidth) / xAxisTicks;
-    return `
-      <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
-      <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
-    `;
-  }).join('');
+  const xLabels = xAxisTicks === 0
+    ? `
+      <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${padding.left}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${minScore}</text>
+    `
+    : Array.from({ length: xAxisTicks + 1 }, (_, i) => {
+      const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
+      const x = padding.left + (i * chartWidth) / xAxisTicks;
+      return `
+        <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+        <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
+      `;
+    }).join('');
 
   return `
     <svg viewBox="0 0 ${width} ${height}" class="histogram">
@@ -568,14 +573,19 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
   const yLabels = '';
 
   const xAxisTicks = Math.min(10, Math.ceil((maxScore - minScore) / 20));
-  const xLabels = Array.from({ length: xAxisTicks + 1 }, (_, i) => {
-    const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
-    const x = padding.left + (i * chartWidth) / xAxisTicks;
-    return `
-      <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
-      <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
-    `;
-  }).join('');
+  const xLabels = xAxisTicks === 0
+    ? `
+      <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+      <text x="${padding.left}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${minScore}</text>
+    `
+    : Array.from({ length: xAxisTicks + 1 }, (_, i) => {
+      const score = Math.round(minScore + ((maxScore - minScore) / xAxisTicks) * i);
+      const x = padding.left + (i * chartWidth) / xAxisTicks;
+      return `
+        <line x1="${x}" y1="${padding.top + chartHeight}" x2="${x}" y2="${padding.top + chartHeight + 5}" stroke="#94a3b8" stroke-width="1" />
+        <text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#94a3b8">${score}</text>
+      `;
+    }).join('');
 
   return `
     <svg viewBox="0 0 ${width} ${height}" class="histogram">
