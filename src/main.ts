@@ -1,6 +1,6 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
-import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, SavedGame } from './storage';
+import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame } from './storage';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -165,6 +165,10 @@ app.innerHTML = `
     </div>
 
     <div class="sidebar-actions">
+      <div class="action-buttons-row">
+        <button id="export-btn" class="secondary-btn">Export JSON</button>
+        <button id="import-btn" class="secondary-btn">Import JSON</button>
+      </div>
       <button id="clear-all-btn" class="secondary-btn">Clear All</button>
     </div>
 
@@ -172,6 +176,9 @@ app.innerHTML = `
       <!-- Saved games will be rendered here -->
     </div>
   </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="import-file-input" accept=".json" style="display: none;" />
 
   <!-- Sidebar Overlay -->
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -197,6 +204,9 @@ const savedGamesSidebar = document.querySelector<HTMLDivElement>('#saved-games-s
 const sidebarOverlay = document.querySelector<HTMLDivElement>('#sidebar-overlay');
 const sidebarCloseButton = document.querySelector<HTMLButtonElement>('#sidebar-close-btn');
 const searchSavedGamesInput = document.querySelector<HTMLInputElement>('#search-saved-games');
+const exportButton = document.querySelector<HTMLButtonElement>('#export-btn');
+const importButton = document.querySelector<HTMLButtonElement>('#import-btn');
+const importFileInput = document.querySelector<HTMLInputElement>('#import-file-input');
 const clearAllButton = document.querySelector<HTMLButtonElement>('#clear-all-btn');
 const savedGamesList = document.querySelector<HTMLDivElement>('#saved-games-list');
 const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-saved-count');
@@ -204,7 +214,8 @@ const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-save
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
     !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
     !saveDescriptionInput || !saveLeagueInput || !leagueDatalist || !saveDateInput || !saveCancelButton ||
-    !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !searchSavedGamesInput || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
+    !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !searchSavedGamesInput ||
+    !exportButton || !importButton || !importFileInput || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
   throw new Error('Failed to initialise UI elements');
 }
 
@@ -505,7 +516,20 @@ saveForm.addEventListener('submit', (e) => {
   const scores = textarea.value.trim();
   const description = saveDescriptionInput.value.trim() || undefined;
   const league = saveLeagueInput.value.trim() || undefined;
-  const date = saveDateInput.value || undefined;
+  let date = saveDateInput.value || undefined;
+
+  // Validate date is not in the future
+  if (date) {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      showToast('Date cannot be in the future');
+      saveDateInput.focus();
+      return;
+    }
+  }
 
   try {
     saveGame(scores, description, league, date);
@@ -529,6 +553,61 @@ clearAllButton.addEventListener('click', () => {
     renderSavedGamesList();
     showToast('All games deleted');
   }
+});
+
+// Export games
+exportButton.addEventListener('click', () => {
+  const games = loadGames();
+  if (games.length === 0) {
+    showToast('No games to export');
+    return;
+  }
+
+  const jsonData = exportGames();
+  const blob = new Blob([jsonData], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bowling-games-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${games.length} game${games.length === 1 ? '' : 's'}`);
+});
+
+// Import games
+importButton.addEventListener('click', () => {
+  importFileInput.click();
+});
+
+importFileInput.addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const jsonData = event.target?.result as string;
+    const result = importGames(jsonData);
+
+    if (result.success) {
+      updateSavedGamesCount();
+      renderSavedGamesList();
+      showToast(`Imported ${result.count} game${result.count === 1 ? '' : 's'}`);
+    } else {
+      showToast(result.error || 'Import failed');
+    }
+
+    // Reset file input
+    importFileInput.value = '';
+  };
+
+  reader.onerror = () => {
+    showToast('Failed to read file');
+    importFileInput.value = '';
+  };
+
+  reader.readAsText(file);
 });
 
 // Initialize saved games count on load

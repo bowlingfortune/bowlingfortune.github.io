@@ -77,6 +77,35 @@ export function getUniqueLeagues(): string[] {
   return Array.from(leagues).sort();
 }
 
+export function exportGames(): string {
+  const storage = loadStorage();
+  return JSON.stringify(storage, null, 2);
+}
+
+export function importGames(jsonData: string): { success: boolean; count: number; error?: string } {
+  try {
+    const data = JSON.parse(jsonData);
+
+    // Validate structure
+    if (!data.version || !Array.isArray(data.games)) {
+      return { success: false, count: 0, error: 'Invalid file format' };
+    }
+
+    // Validate each game has required fields
+    for (const game of data.games) {
+      if (!game.id || !game.scores || typeof game.savedAt !== 'number') {
+        return { success: false, count: 0, error: 'Invalid game data in file' };
+      }
+    }
+
+    // Save the imported data
+    saveStorage(data);
+    return { success: true, count: data.games.length };
+  } catch (e) {
+    return { success: false, count: 0, error: 'Failed to parse JSON file' };
+  }
+}
+
 function loadStorage(): SavedGamesStorage {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
