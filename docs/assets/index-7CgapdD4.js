@@ -44,7 +44,7 @@ X X X X X X X X X XXX
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: 2025-10-18 07:40:37 CT</p>
+    <p>Build: 2025-10-18 07:42:11 CT</p>
   </footer>
 
   <!-- Save Modal -->
@@ -298,8 +298,7 @@ Combinations: ${u.count.toLocaleString()}</title>
     </button>
   `,t=e.map((s,n)=>{const c=n+1,i=s.stats.mode.length===1?s.stats.mode[0].toString():`${s.stats.mode.join(", ")} (multimodal)`,m=s.score-s.stats.median,f=m>=0?`+${m}`:`${m}`,l=it(s);return`
         <article class="result-card">
-          <h2>Game ${c}</h2>
-          <p><strong>Actual score:</strong> ${s.score}</p>
+          <h2>Game ${c} - Score: ${s.score}</h2>
 
           <div class="narrative">
             <p>${l}</p>

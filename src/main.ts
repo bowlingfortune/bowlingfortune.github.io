@@ -1297,8 +1297,7 @@ function renderResults(results: GameResult[]): void {
 
       return `
         <article class="result-card">
-          <h2>Game ${gameNumber}</h2>
-          <p><strong>Actual score:</strong> ${result.score}</p>
+          <h2>Game ${gameNumber} - Score: ${result.score}</h2>
 
           <div class="narrative">
             <p>${narrative}</p>
