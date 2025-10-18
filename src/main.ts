@@ -351,8 +351,8 @@ document.addEventListener('keydown', (e) => {
 function updateSavedGamesCount() {
   const games = loadGames();
   const count = games.length;
-  savedCountBadge.textContent = count > 0 ? `(${count})` : '';
-  sidebarSavedCount.textContent = count > 0 ? `(${count})` : '';
+  savedCountBadge.textContent = count > 0 ? ` (${count})` : '';
+  sidebarSavedCount.textContent = count > 0 ? ` (${count})` : '';
 }
 
 function showSaveModal() {
