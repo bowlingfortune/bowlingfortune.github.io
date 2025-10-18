@@ -646,6 +646,13 @@ button:active {
   font-weight: 600;
 }
 
+.saved-game-league {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.85rem;
+  color: #60a5fa;
+  font-weight: 500;
+}
+
 .saved-game-meta {
   margin: 0;
   font-size: 0.85rem;

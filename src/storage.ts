@@ -4,6 +4,7 @@ export interface SavedGame {
   id: string;
   scores: string;
   description?: string;
+  league?: string;
   date?: string;
   savedAt: number;
   gameCount: number;
@@ -21,6 +22,7 @@ const MAX_SAVED_GAMES = 50;
 export function saveGame(
   scores: string,
   description?: string,
+  league?: string,
   date?: string
 ): SavedGame {
   const storage = loadStorage();
@@ -29,6 +31,7 @@ export function saveGame(
     id: generateId(),
     scores,
     description,
+    league,
     date: date || new Date().toISOString().split('T')[0],
     savedAt: Date.now(),
     gameCount: scores.trim().split('\n').filter(line => line.trim()).length,
@@ -59,6 +62,19 @@ export function deleteGame(id: string): void {
 
 export function clearAllGames(): void {
   saveStorage({ version: 1, games: [] });
+}
+
+export function getUniqueLeagues(): string[] {
+  const games = loadGames();
+  const leagues = new Set<string>();
+
+  for (const game of games) {
+    if (game.league && game.league.trim()) {
+      leagues.add(game.league.trim());
+    }
+  }
+
+  return Array.from(leagues).sort();
 }
 
 function loadStorage(): SavedGamesStorage {

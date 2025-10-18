@@ -1,6 +1,6 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
-import { saveGame, loadGames, deleteGame, clearAllGames, SavedGame } from './storage';
+import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, SavedGame } from './storage';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -133,7 +133,11 @@ app.innerHTML = `
       <h2>Save Game</h2>
       <form id="save-form">
         <label for="save-description">Description (optional)</label>
-        <input type="text" id="save-description" placeholder="e.g., League Night - Week 3" />
+        <input type="text" id="save-description" placeholder="e.g., Practice session" />
+
+        <label for="save-league">League (optional)</label>
+        <input type="text" id="save-league" list="league-list" placeholder="e.g., Tuesday Night League" />
+        <datalist id="league-list"></datalist>
 
         <label for="save-date">Date (optional)</label>
         <input type="date" id="save-date" />
@@ -178,6 +182,8 @@ const savedCountBadge = document.querySelector<HTMLSpanElement>('#saved-count');
 const saveModalOverlay = document.querySelector<HTMLDivElement>('#save-modal-overlay');
 const saveForm = document.querySelector<HTMLFormElement>('#save-form');
 const saveDescriptionInput = document.querySelector<HTMLInputElement>('#save-description');
+const saveLeagueInput = document.querySelector<HTMLInputElement>('#save-league');
+const leagueDatalist = document.querySelector<HTMLDataListElement>('#league-list');
 const saveDateInput = document.querySelector<HTMLInputElement>('#save-date');
 const saveCancelButton = document.querySelector<HTMLButtonElement>('#save-cancel-btn');
 const savedGamesSidebar = document.querySelector<HTMLDivElement>('#saved-games-sidebar');
@@ -189,8 +195,8 @@ const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-save
 
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
     !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
-    !saveDescriptionInput || !saveDateInput || !saveCancelButton || !savedGamesSidebar ||
-    !sidebarOverlay || !sidebarCloseButton || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
+    !saveDescriptionInput || !saveLeagueInput || !leagueDatalist || !saveDateInput || !saveCancelButton ||
+    !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
   throw new Error('Failed to initialise UI elements');
 }
 
@@ -359,6 +365,13 @@ function showSaveModal() {
   const today = new Date().toISOString().split('T')[0];
   saveDateInput.value = today;
   saveDescriptionInput.value = '';
+  saveLeagueInput.value = '';
+
+  // Populate league autocomplete
+  const leagues = getUniqueLeagues();
+  leagueDatalist.innerHTML = leagues.map(league =>
+    `<option value="${league}">`
+  ).join('');
 
   saveModalOverlay.classList.add('show');
   saveDescriptionInput.focus();
@@ -391,11 +404,13 @@ function renderSavedGamesList() {
     const gameCountText = game.gameCount === 1 ? '1 game' : `${game.gameCount} games`;
     const scoreText = game.totalScore !== undefined ? `🎯 ${game.totalScore}` : '⚠️ Invalid';
     const descriptionText = game.description || '(No description)';
+    const leagueText = game.league ? `🏆 ${game.league}` : '';
 
     return `
       <div class="saved-game-card" data-game-id="${game.id}">
         <div class="saved-game-info">
           <h3>${descriptionText}</h3>
+          ${leagueText ? `<p class="saved-game-league">${leagueText}</p>` : ''}
           <p class="saved-game-meta">
             📅 ${game.date} | 🎳 ${gameCountText} | ${scoreText}
           </p>
@@ -463,10 +478,11 @@ saveForm.addEventListener('submit', (e) => {
 
   const scores = textarea.value.trim();
   const description = saveDescriptionInput.value.trim() || undefined;
+  const league = saveLeagueInput.value.trim() || undefined;
   const date = saveDateInput.value || undefined;
 
   try {
-    saveGame(scores, description, date);
+    saveGame(scores, description, league, date);
     closeSaveModal();
     updateSavedGamesCount();
     // If sidebar is open, refresh the list
