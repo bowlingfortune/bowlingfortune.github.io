@@ -17,7 +17,7 @@ interface SavedGamesStorage {
 }
 
 const STORAGE_KEY = 'bowling_fortune_saved_games';
-const MAX_SAVED_GAMES = 50;
+const MAX_SAVED_GAMES = 10000;
 
 export function saveGame(
   scores: string,
