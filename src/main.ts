@@ -160,6 +160,10 @@ app.innerHTML = `
       <button id="sidebar-close-btn" class="close-btn" aria-label="Close sidebar">×</button>
     </div>
 
+    <div class="sidebar-search">
+      <input type="text" id="search-saved-games" placeholder="Search by league or description..." />
+    </div>
+
     <div class="sidebar-actions">
       <button id="clear-all-btn" class="secondary-btn">Clear All</button>
     </div>
@@ -192,6 +196,7 @@ const saveCancelButton = document.querySelector<HTMLButtonElement>('#save-cancel
 const savedGamesSidebar = document.querySelector<HTMLDivElement>('#saved-games-sidebar');
 const sidebarOverlay = document.querySelector<HTMLDivElement>('#sidebar-overlay');
 const sidebarCloseButton = document.querySelector<HTMLButtonElement>('#sidebar-close-btn');
+const searchSavedGamesInput = document.querySelector<HTMLInputElement>('#search-saved-games');
 const clearAllButton = document.querySelector<HTMLButtonElement>('#clear-all-btn');
 const savedGamesList = document.querySelector<HTMLDivElement>('#saved-games-list');
 const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-saved-count');
@@ -199,7 +204,7 @@ const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-save
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
     !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
     !saveDescriptionInput || !saveLeagueInput || !leagueDatalist || !saveDateInput || !saveCancelButton ||
-    !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
+    !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !searchSavedGamesInput || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
   throw new Error('Failed to initialise UI elements');
 }
 
@@ -354,8 +359,8 @@ document.addEventListener('keydown', (e) => {
 function updateSavedGamesCount() {
   const games = loadGames();
   const count = games.length;
-  savedCountBadge.textContent = count > 0 ? ` (${count})` : '';
-  sidebarSavedCount.textContent = count > 0 ? ` (${count})` : '';
+  savedCountBadge.innerHTML = count > 0 ? `&nbsp;(${count})` : '';
+  sidebarSavedCount.innerHTML = count > 0 ? `&nbsp;(${count})` : '';
 }
 
 function showSaveModal() {
@@ -385,6 +390,7 @@ function closeSaveModal() {
 }
 
 function showSidebar() {
+  searchSavedGamesInput.value = ''; // Clear search when opening
   renderSavedGamesList();
   savedGamesSidebar.classList.add('show');
   sidebarOverlay.classList.add('show');
@@ -396,10 +402,22 @@ function closeSidebar() {
 }
 
 function renderSavedGamesList() {
-  const games = loadGames();
+  const searchQuery = searchSavedGamesInput.value.trim().toLowerCase();
+  let games = loadGames();
+
+  // Filter by search query
+  if (searchQuery) {
+    games = games.filter(game => {
+      const description = (game.description || '').toLowerCase();
+      const league = (game.league || '').toLowerCase();
+      return description.includes(searchQuery) || league.includes(searchQuery);
+    });
+  }
 
   if (games.length === 0) {
-    savedGamesList.innerHTML = '<p class="empty-state">No saved games yet. Save your first game!</p>';
+    savedGamesList.innerHTML = searchQuery
+      ? '<p class="empty-state">No games match your search.</p>'
+      : '<p class="empty-state">No saved games yet. Save your first game!</p>';
     return;
   }
 
@@ -469,6 +487,11 @@ savedGamesButton.addEventListener('click', showSidebar);
 saveCancelButton.addEventListener('click', closeSaveModal);
 sidebarCloseButton.addEventListener('click', closeSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
+
+// Search input listener
+searchSavedGamesInput.addEventListener('input', () => {
+  renderSavedGamesList();
+});
 
 saveModalOverlay.addEventListener('click', (e) => {
   if (e.target === saveModalOverlay) {
