@@ -6,9 +6,9 @@ A web-based bowling score analyzer that calculates traditional scores and provid
 
 **[Try it now at https://bowlingfortune.github.io/](https://bowlingfortune.github.io/)**
 
-## Current Features
+## Features
 
-### Phase 1: Final Score Calculation (Complete)
+### Phase 1: Final Score Calculation ✅
 - Validate and score bowling games using traditional 10-pin scoring (0-300 points)
 - Multi-game input support (one game per line)
 - Comprehensive validation with detailed error reporting
@@ -19,14 +19,40 @@ A web-based bowling score analyzer that calculates traditional scores and provid
   - `/` for spares
   - `-` for gutter balls (equivalent to `0`)
 
-### Coming Soon
-- **Phase 2**: Frame permutation statistics (min, max, median, mean, mode)
-- **Phase 3**: Score distribution histograms
-- **Phase 4**: Outlier analysis (z-score, percentile, skewness)
-- **Phase 5**: Multi-game series statistics
-- **Phase 6**: Series distribution visualization
+### Phase 2: Frame Permutation Statistics ✅
+- Generate all 362,880 permutations of frames 1-9 (frame 10 held constant)
+- Calculate min, max, median, mean, and standard deviation across all permutations
+- Determine how your actual score compares to all possible frame orderings
 
-See [OUTPUT_PHASES.md](./OUTPUT_PHASES.md) for the complete development roadmap.
+### Phase 3: Score Distribution Histograms ✅
+- Visual histogram showing distribution of all permutation scores
+- Actual score highlighted with median line for reference
+- Interactive SVG-based visualizations (no charting library dependencies)
+
+### Phase 4: Outlier Analysis ✅
+- Z-score calculation showing how unusual your score is
+- Percentile ranking (e.g., "You scored better than 87% of permutations")
+- Statistical insights with natural language explanations
+- Skewness analysis to understand distribution shape
+
+### Phase 5: Series Statistics ✅
+- Multi-game analysis when multiple games are entered
+- Per-game permutation statistics
+- Series-level aggregated insights
+- Independent game analysis (no cross-game frame mixing)
+
+### Phase 6: Series Distribution Visualization ✅
+- Combined histograms for entire series
+- Series-level outlier analysis
+- Both individual game and series-wide reporting
+
+### Additional Features
+- **Quick Examples**: Dropdown with 8 pre-configured example scenarios
+- **Responsive Design**: Mobile-friendly interface with touch support
+- **Accessibility**: ARIA labels, keyboard navigation
+- **Lightweight**: ~7.28KB gzipped bundle with no framework dependencies
+
+See [OUTPUT_PHASES.md](./OUTPUT_PHASES.md) for the original development roadmap.
 
 ## Usage
 

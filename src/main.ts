@@ -1,5 +1,6 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
+import { saveGame, loadGames, deleteGame, clearAllGames, SavedGame } from './storage';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -104,6 +105,10 @@ app.innerHTML = `
       </div>
     </div>
     <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
+    <button id="save-btn" type="button" class="secondary-btn">💾 Save</button>
+    <button id="saved-games-btn" type="button" class="secondary-btn">
+      📋 Saved Games <span id="saved-count"></span>
+    </button>
   </div>
   <div id="scores-help" class="description">
     <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
@@ -121,6 +126,44 @@ app.innerHTML = `
   <footer class="version">
     <p>Build: ${__BUILD_TIMESTAMP__} CT</p>
   </footer>
+
+  <!-- Save Modal -->
+  <div id="save-modal-overlay" class="modal-overlay">
+    <div class="save-modal">
+      <h2>Save Game</h2>
+      <form id="save-form">
+        <label for="save-description">Description (optional)</label>
+        <input type="text" id="save-description" placeholder="e.g., League Night - Week 3" />
+
+        <label for="save-date">Date (optional)</label>
+        <input type="date" id="save-date" />
+
+        <div class="modal-actions">
+          <button type="button" id="save-cancel-btn" class="secondary-btn">Cancel</button>
+          <button type="submit" class="primary-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Saved Games Sidebar -->
+  <div id="saved-games-sidebar" class="saved-games-sidebar">
+    <div class="sidebar-header">
+      <h2>📋 Saved Games <span id="sidebar-saved-count"></span></h2>
+      <button id="sidebar-close-btn" class="close-btn" aria-label="Close sidebar">×</button>
+    </div>
+
+    <div class="sidebar-actions">
+      <button id="clear-all-btn" class="secondary-btn">Clear All</button>
+    </div>
+
+    <div id="saved-games-list" class="saved-games-list">
+      <!-- Saved games will be rendered here -->
+    </div>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
 `;
 
 const textarea = document.querySelector<HTMLTextAreaElement>('#scores-input');
@@ -129,8 +172,25 @@ const clearButton = document.querySelector<HTMLButtonElement>('#clear-btn');
 const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
 const exampleDropdown = document.querySelector<HTMLDivElement>('#example-dropdown');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
+const saveButton = document.querySelector<HTMLButtonElement>('#save-btn');
+const savedGamesButton = document.querySelector<HTMLButtonElement>('#saved-games-btn');
+const savedCountBadge = document.querySelector<HTMLSpanElement>('#saved-count');
+const saveModalOverlay = document.querySelector<HTMLDivElement>('#save-modal-overlay');
+const saveForm = document.querySelector<HTMLFormElement>('#save-form');
+const saveDescriptionInput = document.querySelector<HTMLInputElement>('#save-description');
+const saveDateInput = document.querySelector<HTMLInputElement>('#save-date');
+const saveCancelButton = document.querySelector<HTMLButtonElement>('#save-cancel-btn');
+const savedGamesSidebar = document.querySelector<HTMLDivElement>('#saved-games-sidebar');
+const sidebarOverlay = document.querySelector<HTMLDivElement>('#sidebar-overlay');
+const sidebarCloseButton = document.querySelector<HTMLButtonElement>('#sidebar-close-btn');
+const clearAllButton = document.querySelector<HTMLButtonElement>('#clear-all-btn');
+const savedGamesList = document.querySelector<HTMLDivElement>('#saved-games-list');
+const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-saved-count');
 
-if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback) {
+if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
+    !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
+    !saveDescriptionInput || !saveDateInput || !saveCancelButton || !savedGamesSidebar ||
+    !sidebarOverlay || !sidebarCloseButton || !clearAllButton || !savedGamesList || !sidebarSavedCount) {
   throw new Error('Failed to initialise UI elements');
 }
 
@@ -257,7 +317,17 @@ textarea.addEventListener('keydown', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    // Close dropdown first if open
+    // Close sidebar first if open
+    if (savedGamesSidebar.classList.contains('show')) {
+      closeSidebar();
+      return;
+    }
+    // Close save modal if open
+    if (saveModalOverlay.classList.contains('show')) {
+      closeSaveModal();
+      return;
+    }
+    // Close dropdown if open
     if (isDropdownOpen) {
       closeDropdown();
       exampleButton.focus();
@@ -270,6 +340,153 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// Save/Load Functionality
+function updateSavedGamesCount() {
+  const games = loadGames();
+  const count = games.length;
+  savedCountBadge.textContent = count > 0 ? `(${count})` : '';
+  sidebarSavedCount.textContent = count > 0 ? `(${count})` : '';
+}
+
+function showSaveModal() {
+  if (!textarea.value.trim()) {
+    showToast('Please enter some scores first');
+    return;
+  }
+
+  // Pre-fill today's date
+  const today = new Date().toISOString().split('T')[0];
+  saveDateInput.value = today;
+  saveDescriptionInput.value = '';
+
+  saveModalOverlay.classList.add('show');
+  saveDescriptionInput.focus();
+}
+
+function closeSaveModal() {
+  saveModalOverlay.classList.remove('show');
+}
+
+function showSidebar() {
+  renderSavedGamesList();
+  savedGamesSidebar.classList.add('show');
+  sidebarOverlay.classList.add('show');
+}
+
+function closeSidebar() {
+  savedGamesSidebar.classList.remove('show');
+  sidebarOverlay.classList.remove('show');
+}
+
+function renderSavedGamesList() {
+  const games = loadGames();
+
+  if (games.length === 0) {
+    savedGamesList.innerHTML = '<p class="empty-state">No saved games yet. Save your first game!</p>';
+    return;
+  }
+
+  savedGamesList.innerHTML = games.map(game => {
+    const gameCountText = game.gameCount === 1 ? '1 game' : `${game.gameCount} games`;
+    const scoreText = game.totalScore !== undefined ? `🎯 ${game.totalScore}` : '⚠️ Invalid';
+    const descriptionText = game.description || '(No description)';
+
+    return `
+      <div class="saved-game-card" data-game-id="${game.id}">
+        <div class="saved-game-info">
+          <h3>${descriptionText}</h3>
+          <p class="saved-game-meta">
+            📅 ${game.date} | 🎳 ${gameCountText} | ${scoreText}
+          </p>
+        </div>
+        <div class="saved-game-actions">
+          <button class="load-btn" data-load-id="${game.id}">Load</button>
+          <button class="delete-btn" data-delete-id="${game.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add event listeners for load and delete buttons
+  savedGamesList.querySelectorAll<HTMLButtonElement>('[data-load-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-load-id');
+      if (id) loadSavedGame(id);
+    });
+  });
+
+  savedGamesList.querySelectorAll<HTMLButtonElement>('[data-delete-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-delete-id');
+      if (id) deleteSavedGame(id);
+    });
+  });
+}
+
+function loadSavedGame(id: string) {
+  const games = loadGames();
+  const game = games.find(g => g.id === id);
+
+  if (game) {
+    textarea.value = game.scores;
+    closeSidebar();
+    textarea.focus();
+    showToast('Game loaded!');
+  }
+}
+
+function deleteSavedGame(id: string) {
+  if (confirm('Delete this saved game?')) {
+    deleteGame(id);
+    updateSavedGamesCount();
+    renderSavedGamesList();
+    showToast('Game deleted');
+  }
+}
+
+// Event Listeners for Save/Load
+saveButton.addEventListener('click', showSaveModal);
+savedGamesButton.addEventListener('click', showSidebar);
+saveCancelButton.addEventListener('click', closeSaveModal);
+sidebarCloseButton.addEventListener('click', closeSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+saveModalOverlay.addEventListener('click', (e) => {
+  if (e.target === saveModalOverlay) {
+    closeSaveModal();
+  }
+});
+
+saveForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const scores = textarea.value.trim();
+  const description = saveDescriptionInput.value.trim() || undefined;
+  const date = saveDateInput.value || undefined;
+
+  try {
+    saveGame(scores, description, date);
+    closeSaveModal();
+    updateSavedGamesCount();
+    showToast('Game saved!');
+  } catch (error) {
+    console.error('Failed to save game', error);
+    showToast('Failed to save game');
+  }
+});
+
+clearAllButton.addEventListener('click', () => {
+  if (confirm('Delete ALL saved games? This cannot be undone.')) {
+    clearAllGames();
+    updateSavedGamesCount();
+    renderSavedGamesList();
+    showToast('All games deleted');
+  }
+});
+
+// Initialize saved games count on load
+updateSavedGamesCount();
 
 // Check for scores in URL on load
 window.addEventListener('DOMContentLoaded', () => {
