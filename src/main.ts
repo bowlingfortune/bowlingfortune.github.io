@@ -45,8 +45,21 @@ app.innerHTML = `
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
   <div class="textarea-footer">
+    <div class="example-dropdown-container">
+      <button id="example-btn" type="button" class="secondary-btn example-btn" aria-haspopup="true" aria-expanded="false">
+        Try an example
+        <span class="dropdown-arrow">▼</span>
+      </button>
+      <div id="example-dropdown" class="example-dropdown" role="menu" aria-hidden="true">
+        ${exampleScenarios.map((scenario, index) => `
+          <button type="button" class="dropdown-item" data-example-index="${index}" role="menuitem">
+            <strong>${scenario.name}</strong>
+            <span class="dropdown-item-desc">${scenario.description}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
     <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
-    <button id="example-btn" type="button" class="secondary-btn">Try an example</button>
   </div>
   <div id="scores-help" class="description">
     <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
@@ -70,20 +83,58 @@ const textarea = document.querySelector<HTMLTextAreaElement>('#scores-input');
 const submitButton = document.querySelector<HTMLButtonElement>('#submit');
 const clearButton = document.querySelector<HTMLButtonElement>('#clear-btn');
 const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
+const exampleDropdown = document.querySelector<HTMLDivElement>('#example-dropdown');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
 
-if (!textarea || !submitButton || !clearButton || !exampleButton || !feedback) {
+if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback) {
   throw new Error('Failed to initialise UI elements');
 }
 
-const examples = [
-  '9/ X 81 7/ X X 9- 90 X XX6',
-  'X X X X X X X X X XXX',
-  'X 9/ 54 X 8/ 9- X 81 9/ X8/',
-  '9/ X 81 7/ X X 9- 90 X XX6\nX X X X X X X X X XXX\n7/ 6- X 81 9/ X 7- X X X90'
+// Example scenarios with descriptions
+const exampleScenarios = [
+  {
+    name: 'Perfect Game (300)',
+    description: 'The ultimate achievement - 12 strikes in a row',
+    score: 'X X X X X X X X X XXX'
+  },
+  {
+    name: 'Lucky Game',
+    description: 'Actual score much higher than median - very favorable frame order',
+    score: 'X X X 9/ X X 81 X X X9/'
+  },
+  {
+    name: 'Unlucky Game',
+    description: 'Actual score lower than median - unfavorable frame order',
+    score: '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9'
+  },
+  {
+    name: 'Average Game',
+    description: 'Typical performance around 150',
+    score: '9/ X 81 7/ X X 9- 90 X XX6'
+  },
+  {
+    name: 'Low Score Game',
+    description: 'Rough day at the lanes - lots of open frames',
+    score: '52 7- 43 8- 61 72 54 6- 81 7-'
+  },
+  {
+    name: 'Multiple Games Series',
+    description: 'Three-game series showing different performances',
+    score: '9/ X 81 7/ X X 9- 90 X XX6\nX X X X X X X X X XXX\n7/ 6- X 81 9/ X 7- X X X90'
+  },
+  {
+    name: 'Clutch Performance',
+    description: 'Strong finish with strikes in the 10th',
+    score: '7/ 8/ 81 9- 72 X 9/ 8- X XXX'
+  },
+  {
+    name: 'All Spares Game',
+    description: 'Consistent spare shooting - no strikes, no open frames',
+    score: '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/9'
+  }
 ];
 
-let exampleIndex = 0;
+let currentExampleIndex = 0;
 
 clearButton.addEventListener('click', () => {
   textarea.value = '';
@@ -91,10 +142,63 @@ clearButton.addEventListener('click', () => {
   textarea.focus();
 });
 
-exampleButton.addEventListener('click', () => {
-  textarea.value = examples[exampleIndex];
-  exampleIndex = (exampleIndex + 1) % examples.length;
-  textarea.focus();
+// Dropdown functionality
+let isDropdownOpen = false;
+
+function toggleDropdown() {
+  isDropdownOpen = !isDropdownOpen;
+  exampleDropdown.classList.toggle('show', isDropdownOpen);
+  exampleButton.setAttribute('aria-expanded', isDropdownOpen.toString());
+  exampleDropdown.setAttribute('aria-hidden', (!isDropdownOpen).toString());
+}
+
+function closeDropdown() {
+  isDropdownOpen = false;
+  exampleDropdown.classList.remove('show');
+  exampleButton.setAttribute('aria-expanded', 'false');
+  exampleDropdown.setAttribute('aria-hidden', 'true');
+}
+
+exampleButton.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleDropdown();
+});
+
+// Handle example selection from dropdown
+const dropdownItems = exampleDropdown.querySelectorAll<HTMLButtonElement>('.dropdown-item');
+dropdownItems.forEach((item) => {
+  item.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const index = parseInt(item.getAttribute('data-example-index') || '0', 10);
+    textarea.value = exampleScenarios[index].score;
+    closeDropdown();
+    textarea.focus();
+  });
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (isDropdownOpen && !exampleButton.contains(target) && !exampleDropdown.contains(target)) {
+    closeDropdown();
+  }
+});
+
+// Keyboard navigation for dropdown
+exampleDropdown.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const items = Array.from(dropdownItems);
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+
+    let nextIndex: number;
+    if (e.key === 'ArrowDown') {
+      nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+    } else {
+      nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+    }
+    items[nextIndex]?.focus();
+  }
 });
 
 let phraseIndex = 0;
@@ -155,6 +259,13 @@ textarea.addEventListener('keydown', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Close dropdown first if open
+    if (isDropdownOpen) {
+      closeDropdown();
+      exampleButton.focus();
+      return;
+    }
+    // Otherwise, clear feedback as before
     if (feedback.innerHTML) {
       feedback.innerHTML = '';
       textarea.focus();

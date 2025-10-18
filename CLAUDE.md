@@ -1,0 +1,1 @@
+- To deploy, simply build, commit, and push. This is a GitHub Pages project that automatically serves up the contents of ./out
