@@ -469,6 +469,10 @@ saveForm.addEventListener('submit', (e) => {
     saveGame(scores, description, date);
     closeSaveModal();
     updateSavedGamesCount();
+    // If sidebar is open, refresh the list
+    if (savedGamesSidebar.classList.contains('show')) {
+      renderSavedGamesList();
+    }
     showToast('Game saved!');
   } catch (error) {
     console.error('Failed to save game', error);
