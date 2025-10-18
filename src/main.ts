@@ -1,5 +1,5 @@
 import './style.css';
-import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore } from './bowling';
+import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore, analyzeFramePositionalImpact, FrameImpactAnalysis } from './bowling';
 import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame } from './storage';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -1153,16 +1153,14 @@ function showToast(message: string) {
 
 function renderFrameImpact(frames: Frame[]): string {
   const frameScores = calculateFrameScores(frames);
+  const impactAnalysis = analyzeFramePositionalImpact(frames);
 
-  // Exclude 10th frame from hero/villain analysis since it has special scoring rules
-  const framesForAnalysis = frameScores.slice(0, 9);
+  // Sort by position benefit to find luckiest and unluckiest frames
+  const sortedByBenefit = [...impactAnalysis].sort((a, b) => b.positionBenefit - a.positionBenefit);
 
-  // Sort by score contribution
-  const sortedByContribution = [...framesForAnalysis].sort((a, b) => b.scoreContribution - a.scoreContribution);
-
-  // Get top 3 heroes and bottom 3 villains
-  const heroes = sortedByContribution.slice(0, 3);
-  const villains = sortedByContribution.slice(-3).reverse();
+  // Get top 3 luckiest and bottom 3 unluckiest
+  const luckiest = sortedByBenefit.slice(0, 3);
+  const unluckiest = sortedByBenefit.slice(-3).reverse();
 
   // Render complete scorecard
   function renderCompleteScorecard(): string {
@@ -1181,44 +1179,19 @@ function renderFrameImpact(frames: Frame[]): string {
     `;
   }
 
-  function renderFrame(fs: FrameScore, emoji: string): string {
-    // Determine explanation based on what happened
-    let explanation = '';
-
-    if (fs.isStrike) {
-      if (fs.scoreContribution === 30) {
-        explanation = `Strike with 2 more strikes for maximum ${fs.scoreContribution} points`;
-      } else if (fs.scoreContribution >= 20) {
-        explanation = `Strike with strong follow-ups for ${fs.scoreContribution} points`;
-      } else {
-        explanation = `Strike but weak follow-ups: only ${fs.scoreContribution} points`;
-      }
-    } else if (fs.isSpare) {
-      if (fs.scoreContribution >= 20) {
-        explanation = `Spare with strike bonus for ${fs.scoreContribution} points`;
-      } else if (fs.scoreContribution >= 15) {
-        explanation = `Spare with decent bonus for ${fs.scoreContribution} points`;
-      } else {
-        explanation = `Spare with weak bonus: ${fs.scoreContribution} points`;
-      }
-    } else {
-      // Open frame
-      if (fs.scoreContribution >= 9) {
-        explanation = `Open frame with ${fs.scoreContribution} pins`;
-      } else if (fs.scoreContribution >= 5) {
-        explanation = `Open frame with ${fs.scoreContribution} pins`;
-      } else {
-        explanation = `Open frame with only ${fs.scoreContribution} pins`;
-      }
-    }
+  function renderImpactFrame(impact: FrameImpactAnalysis, emoji: string): string {
+    const benefitSign = impact.positionBenefit >= 0 ? '+' : '';
+    const frameScore = frameScores.find(fs => fs.frameNumber === impact.frameNumber);
+    const cumulativeScore = frameScore?.cumulativeScore || 0;
 
     return `
       <div class="scorecard-frame">
         <div class="frame-emoji">${emoji}</div>
-        <div class="frame-rolls">${fs.rollSymbols}</div>
-        <div class="frame-score">${fs.cumulativeScore}</div>
-        <div class="frame-number">Frame ${fs.frameNumber}</div>
-        <div class="frame-explanation">${explanation}</div>
+        <div class="frame-rolls">${impact.rollSymbols}</div>
+        <div class="frame-score">${cumulativeScore}</div>
+        <div class="frame-benefit ${impact.positionBenefit >= 0 ? 'positive' : 'negative'}">${benefitSign}${impact.positionBenefit}</div>
+        <div class="frame-number">Frame ${impact.frameNumber}</div>
+        <div class="frame-explanation">${impact.explanation}</div>
       </div>
     `;
   }
@@ -1230,16 +1203,18 @@ function renderFrameImpact(frames: Frame[]): string {
       ${renderCompleteScorecard()}
 
       <div class="hero-frames">
-        <h4>🔥 Hero Frames (Best Contributors)</h4>
+        <h4>🍀 Luckiest Frames (Best Positional Benefit)</h4>
+        <p class="section-explanation">These frames scored more than average due to favorable positioning in the game order</p>
         <div class="scorecard-frames">
-          ${heroes.map(fs => renderFrame(fs, '🔥')).join('')}
+          ${luckiest.map(impact => renderImpactFrame(impact, '🍀')).join('')}
         </div>
       </div>
 
       <div class="villain-frames">
-        <h4>⚠️ Villain Frames (Worst Contributors)</h4>
+        <h4>💔 Unluckiest Frames (Worst Positional Benefit)</h4>
+        <p class="section-explanation">These frames scored less than average due to unfavorable positioning in the game order</p>
         <div class="scorecard-frames">
-          ${villains.map(fs => renderFrame(fs, '⚠️')).join('')}
+          ${unluckiest.map(impact => renderImpactFrame(impact, '💔')).join('')}
         </div>
       </div>
     </div>

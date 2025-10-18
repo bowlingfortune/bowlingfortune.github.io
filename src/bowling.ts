@@ -489,6 +489,17 @@ export interface FrameScore {
   isSpare: boolean;
 }
 
+export interface FrameImpactAnalysis {
+  frameNumber: number;
+  actualContribution: number;
+  averageContribution: number;
+  positionBenefit: number;
+  rollSymbols: string;
+  isStrike: boolean;
+  isSpare: boolean;
+  explanation: string;
+}
+
 /**
  * Generate all permutations of frames 1-9 using Heap's algorithm.
  * Frame 10 is kept fixed at the end.
@@ -667,4 +678,88 @@ export function calculateFrameScores(frames: Frame[]): FrameScore[] {
   }
 
   return frameScores;
+}
+
+/**
+ * Analyze which frames benefited or suffered most from their position in the game order.
+ * This leverages permutation analysis to show positional luck/unluck.
+ */
+export function analyzeFramePositionalImpact(frames: Frame[]): FrameImpactAnalysis[] {
+  if (frames.length !== 10) {
+    return [];
+  }
+
+  const first9 = frames.slice(0, 9);
+  const frame10 = frames[9];
+  const actualScores = calculateFrameScores(frames);
+
+  // For each frame in the first 9, calculate its average contribution across all positions
+  const impactAnalysis: FrameImpactAnalysis[] = [];
+
+  for (let frameIdx = 0; frameIdx < 9; frameIdx++) {
+    const currentFrame = first9[frameIdx];
+    const actualContribution = actualScores[frameIdx].scoreContribution;
+
+    // Calculate what this frame would score in each position
+    const contributionsInEachPosition: number[] = [];
+
+    for (let position = 0; position < 9; position++) {
+      // Create a test arrangement with this frame in the target position
+      const testFrames = [...first9];
+
+      // Swap current frame to target position
+      [testFrames[frameIdx], testFrames[position]] = [testFrames[position], testFrames[frameIdx]];
+
+      // Calculate score for this arrangement
+      const fullGame = [...testFrames, frame10];
+      const scores = calculateFrameScores(fullGame);
+
+      // Find which position our frame ended up in after swap
+      const contribution = scores[position].scoreContribution;
+      contributionsInEachPosition.push(contribution);
+    }
+
+    const averageContribution = contributionsInEachPosition.reduce((a, b) => a + b, 0) / contributionsInEachPosition.length;
+    const positionBenefit = actualContribution - averageContribution;
+
+    let explanation = '';
+    if (currentFrame.isStrike) {
+      if (positionBenefit > 5) {
+        explanation = `Lucky placement! Strike got strong bonuses (${Math.round(positionBenefit)} pins above average for this position)`;
+      } else if (positionBenefit < -5) {
+        explanation = `Unlucky placement! Strike got weak bonuses (${Math.round(Math.abs(positionBenefit))} pins below average)`;
+      } else {
+        explanation = `Strike in neutral position (within ${Math.round(Math.abs(positionBenefit))} pins of average)`;
+      }
+    } else if (currentFrame.isSpare) {
+      if (positionBenefit > 3) {
+        explanation = `Great timing! Spare got a strong bonus ball (${Math.round(positionBenefit)} pins above average)`;
+      } else if (positionBenefit < -3) {
+        explanation = `Bad timing! Spare got a weak bonus ball (${Math.round(Math.abs(positionBenefit))} pins below average)`;
+      } else {
+        explanation = `Spare in neutral position (within ${Math.round(Math.abs(positionBenefit))} pins of average)`;
+      }
+    } else {
+      // Open frame
+      const pinsKnocked = currentFrame.rolls.reduce((sum, roll) => sum + roll.value, 0);
+      if (Math.abs(positionBenefit) <= 0.5) {
+        explanation = `Open frame (${pinsKnocked} pins) - position doesn't matter much`;
+      } else {
+        explanation = `Open frame (${pinsKnocked} pins) - minimal positional impact`;
+      }
+    }
+
+    impactAnalysis.push({
+      frameNumber: frameIdx + 1,
+      actualContribution,
+      averageContribution: Math.round(averageContribution * 10) / 10,
+      positionBenefit: Math.round(positionBenefit * 10) / 10,
+      rollSymbols: actualScores[frameIdx].rollSymbols,
+      isStrike: currentFrame.isStrike,
+      isSpare: currentFrame.isSpare,
+      explanation
+    });
+  }
+
+  return impactAnalysis;
 }
