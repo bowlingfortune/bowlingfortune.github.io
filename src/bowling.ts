@@ -479,6 +479,16 @@ export interface HistogramBin {
   frequency: number;
 }
 
+export interface FrameScore {
+  frameNumber: number;
+  pinsKnocked: number;
+  scoreContribution: number;
+  cumulativeScore: number;
+  rollSymbols: string;
+  isStrike: boolean;
+  isSpare: boolean;
+}
+
 /**
  * Generate all permutations of frames 1-9 using Heap's algorithm.
  * Frame 10 is kept fixed at the end.
@@ -590,4 +600,71 @@ export function calculatePermutationStats(frames: Frame[]): PermutationStats {
     skewness: Math.round(skewness * 100) / 100,
     standardDeviation: Math.round(standardDeviation * 100) / 100
   };
+}
+
+/**
+ * Calculate the score contribution for each individual frame.
+ * Returns detailed information about each frame including its contribution to the total score.
+ */
+export function calculateFrameScores(frames: Frame[]): FrameScore[] {
+  const rolls: number[] = [];
+  const strikeFlags: boolean[] = [];
+  const spareFlags: boolean[] = [];
+
+  for (const frame of frames) {
+    for (const roll of frame.rolls) {
+      rolls.push(roll.value);
+    }
+    strikeFlags.push(frame.isStrike);
+    spareFlags.push(frame.isSpare);
+  }
+
+  const frameScores: FrameScore[] = [];
+  let rollIndex = 0;
+  let cumulativeScore = 0;
+
+  for (let frameIndex = 0; frameIndex < 10; frameIndex += 1) {
+    const frame = frames[frameIndex];
+    let scoreContribution = 0;
+    let pinsKnocked = 0;
+    let rollSymbols = '';
+
+    if (strikeFlags[frameIndex]) {
+      scoreContribution = 10 + (rolls[rollIndex + 1] ?? 0) + (rolls[rollIndex + 2] ?? 0);
+      pinsKnocked = 10;
+
+      if (frameIndex === 9) {
+        // 10th frame with strike
+        rollSymbols = frame.rolls.map(r => r.symbol).join(' ');
+      } else {
+        rollSymbols = 'X';
+      }
+
+      rollIndex += 1;
+    } else if (spareFlags[frameIndex]) {
+      scoreContribution = 10 + (rolls[rollIndex + 2] ?? 0);
+      pinsKnocked = 10;
+      rollSymbols = frame.rolls.map(r => r.symbol).join('');
+      rollIndex += 2;
+    } else {
+      scoreContribution = (rolls[rollIndex] ?? 0) + (rolls[rollIndex + 1] ?? 0);
+      pinsKnocked = scoreContribution;
+      rollSymbols = frame.rolls.map(r => r.symbol).join('');
+      rollIndex += 2;
+    }
+
+    cumulativeScore += scoreContribution;
+
+    frameScores.push({
+      frameNumber: frameIndex + 1,
+      pinsKnocked,
+      scoreContribution,
+      cumulativeScore,
+      rollSymbols,
+      isStrike: frame.isStrike,
+      isSpare: frame.isSpare
+    });
+  }
+
+  return frameScores;
 }

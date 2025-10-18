@@ -763,6 +763,112 @@ button:active {
   transform: translateY(0);
 }
 
+/* Frame Impact Analysis */
+.frame-impact-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.frame-impact-section h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #fbbf24;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.hero-frames,
+.villain-frames {
+  margin-bottom: 2rem;
+}
+
+.hero-frames:last-child,
+.villain-frames:last-child {
+  margin-bottom: 0;
+}
+
+.frame-impact-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.scorecard-frames {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scorecard-frame {
+  position: relative;
+  width: 120px;
+  height: 140px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.scorecard-frame:hover {
+  transform: translateY(-2px);
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.frame-emoji {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  font-size: 1.2rem;
+}
+
+.frame-rolls {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #60a5fa;
+  font-family: 'Courier New', monospace;
+}
+
+.frame-score {
+  position: absolute;
+  bottom: 3.5rem;
+  right: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.frame-number {
+  position: absolute;
+  bottom: 2rem;
+  left: 0.5rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.frame-explanation {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  line-height: 1.2;
+}
+
 @media (max-width: 600px) {
   #app {
     padding: 1.5rem 1.25rem;

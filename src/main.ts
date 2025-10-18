@@ -1,5 +1,5 @@
 import './style.css';
-import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats } from './bowling';
+import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore } from './bowling';
 import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame } from './storage';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -1151,6 +1151,82 @@ function showToast(message: string) {
   }, 2000);
 }
 
+function renderFrameImpact(frames: Frame[]): string {
+  const frameScores = calculateFrameScores(frames);
+
+  // Exclude 10th frame from hero/villain analysis since it has special scoring rules
+  const framesForAnalysis = frameScores.slice(0, 9);
+
+  // Sort by score contribution
+  const sortedByContribution = [...framesForAnalysis].sort((a, b) => b.scoreContribution - a.scoreContribution);
+
+  // Get top 3 heroes and bottom 3 villains
+  const heroes = sortedByContribution.slice(0, 3);
+  const villains = sortedByContribution.slice(-3).reverse();
+
+  function renderFrame(fs: FrameScore, emoji: string): string {
+    // Determine explanation based on what happened
+    let explanation = '';
+
+    if (fs.isStrike) {
+      if (fs.scoreContribution === 30) {
+        explanation = `Strike with 2 more strikes for maximum ${fs.scoreContribution} points`;
+      } else if (fs.scoreContribution >= 20) {
+        explanation = `Strike with strong follow-ups for ${fs.scoreContribution} points`;
+      } else {
+        explanation = `Strike but weak follow-ups: only ${fs.scoreContribution} points`;
+      }
+    } else if (fs.isSpare) {
+      if (fs.scoreContribution >= 20) {
+        explanation = `Spare with strike bonus for ${fs.scoreContribution} points`;
+      } else if (fs.scoreContribution >= 15) {
+        explanation = `Spare with decent bonus for ${fs.scoreContribution} points`;
+      } else {
+        explanation = `Spare with weak bonus: ${fs.scoreContribution} points`;
+      }
+    } else {
+      // Open frame
+      if (fs.scoreContribution >= 9) {
+        explanation = `Open frame with ${fs.scoreContribution} pins`;
+      } else if (fs.scoreContribution >= 5) {
+        explanation = `Open frame with ${fs.scoreContribution} pins`;
+      } else {
+        explanation = `Open frame with only ${fs.scoreContribution} pins`;
+      }
+    }
+
+    return `
+      <div class="scorecard-frame">
+        <div class="frame-emoji">${emoji}</div>
+        <div class="frame-rolls">${fs.rollSymbols}</div>
+        <div class="frame-score">${fs.cumulativeScore}</div>
+        <div class="frame-number">Frame ${fs.frameNumber}</div>
+        <div class="frame-explanation">${explanation}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="frame-impact-section">
+      <h3>Frame Impact Analysis</h3>
+
+      <div class="hero-frames">
+        <h4>🔥 Hero Frames (Best Contributors)</h4>
+        <div class="scorecard-frames">
+          ${heroes.map(fs => renderFrame(fs, '🔥')).join('')}
+        </div>
+      </div>
+
+      <div class="villain-frames">
+        <h4>⚠️ Villain Frames (Worst Contributors)</h4>
+        <div class="scorecard-frames">
+          ${villains.map(fs => renderFrame(fs, '⚠️')).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderResults(results: GameResult[]): void {
   feedback.className = 'output';
   if (results.length === 0) {
@@ -1195,6 +1271,8 @@ function renderResults(results: GameResult[]): void {
               <span style="color: #ec4899; margin-left: 1rem;">- -</span> Median
             </p>
           </div>
+
+          ${renderFrameImpact(result.frames)}
 
           <dl class="stats">
             <dt>Permutations analyzed:</dt>
