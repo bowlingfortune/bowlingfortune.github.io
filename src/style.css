@@ -783,15 +783,21 @@ button:active {
 
 /* Complete Scorecard */
 .complete-scorecard {
-  margin: -0.5rem -1.5rem 2rem -1.5rem;
+  margin: 2rem 0;
   padding: 1rem;
   background: rgba(30, 41, 59, 0.6);
+  border-radius: 0.5rem;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  overflow-x: auto;
+}
+
+/* When scorecard is inside frame-impact-section, use negative margins */
+.frame-impact-section .complete-scorecard {
+  margin: -0.5rem -1.5rem 2rem -1.5rem;
   border-radius: 0;
   border: none;
   border-top: 1px solid rgba(148, 163, 184, 0.2);
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  overflow-x: auto;
-  max-width: none;
 }
 
 .scorecard-row {

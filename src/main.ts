@@ -1151,6 +1151,26 @@ function showToast(message: string) {
   }, 2000);
 }
 
+function renderScorecard(frames: Frame[]): string {
+  const frameScores = calculateFrameScores(frames);
+
+  return `
+    <div class="complete-scorecard">
+      <div class="scorecard-row">
+        ${frameScores.map(fs => {
+          return `
+            <div class="scorecard-full-frame ${fs.frameNumber === 10 ? 'tenth-frame' : ''}">
+              <div class="frame-number-label">${fs.frameNumber}</div>
+              <div class="frame-rolls-display">${fs.rollSymbols}</div>
+              <div class="frame-cumulative-score">${fs.cumulativeScore}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function renderFrameImpact(frames: Frame[]): string {
   const frameScores = calculateFrameScores(frames);
   const impactAnalysis = analyzeFramePositionalImpact(frames);
@@ -1168,7 +1188,7 @@ function renderFrameImpact(frames: Frame[]): string {
     .filter(impact => impact.positionBenefit <= UNLUCKY_THRESHOLD)
     .sort((a, b) => a.positionBenefit - b.positionBenefit);
 
-  // Render complete scorecard
+  // Render complete scorecard with lucky/unlucky indicators
   function renderCompleteScorecard(): string {
     return `
       <div class="complete-scorecard">
@@ -1283,6 +1303,8 @@ function renderResults(results: GameResult[]): void {
           <div class="narrative">
             <p>${narrative}</p>
           </div>
+
+          ${renderScorecard(result.frames)}
 
           <div class="histogram-container">
             ${createHistogram(result)}
