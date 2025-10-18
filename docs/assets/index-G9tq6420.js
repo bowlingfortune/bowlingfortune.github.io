@@ -3,7 +3,10 @@
 `).filter(a=>a.trim());let o=0;for(const a of t){const r=me(a);if(r.kind==="error")return;o+=H(r.frames)}return o}catch{return}}const ce=["Tell My Bowling Fortune","Glimpse Into My Future.. er, Past","Peer Into the Multiverse","Clutch Or Not?","My mom said I'm pretty good.","What oil pattern is this? Badger?","Calculate my shame","How lucky was I, really?","Did I deserve this score?","Explain my misery","Tell me I'm special","Judge my frame order","Was that skill or luck?","Is this thing scratch-and-sniff?","Like a 50/50 raffle, but you never win","We lost by 3 pins, but it definitely wasn't my fault... right?"],le=["Tell Me How Bad I Fucked Up","RATE MUH BALLS"],ze=.001,he=[{name:"Perfect Game (300)",description:"The ultimate achievement - 12 strikes in a row",score:"X X X X X X X X X XXX"},{name:"Lucky Game",description:"Actual score much higher than median - very favorable frame order",score:"81 72 63 54 9/ X X X X XXX"},{name:"Unlucky Game",description:"Actual score lower than median - unfavorable frame order",score:"2/ 1/ 35 X 34 62 4/ 45 8/ 60"},{name:"Average Game",description:"Typical performance - score close to median",score:"9/ 45 03 7/ 40 90 09 9/ X 04"},{name:"Low Score Game",description:"Rough day at the lanes - lots of open frames",score:"52 7- 43 8- 61 72 54 6- 81 7-"},{name:"Multiple Games Series",description:"Three-game series showing different performances",score:`9/ X 81 7/ X X 9- 90 X XX6
 X X X X X X X X X XXX
 7/ 6- X 81 9/ X 7- X X X90`},{name:"Clutch Performance",description:"Strong finish with strikes in the 10th",score:"7/ 8/ 81 9- 72 X 9/ 8- X XXX"},{name:"All Spares Game",description:"Consistent spare shooting - no strikes, no open frames",score:"9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/9"}],pe=document.querySelector("#app");if(!pe)throw new Error("Failed to find app container");pe.innerHTML=`
-  <h1><img src="/logo.png" alt="Pocket Penetration" class="header-logo"> Bowling Fortune Teller 🎳</h1>
+  <h1>Bowling Fortune Teller 🎳</h1>
+  <div class="brought-to-you">
+    brought to you by <img src="/logo.png" alt="Pocket Penetration" class="sponsor-logo">
+  </div>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
   <div class="textarea-footer">
@@ -41,7 +44,7 @@ X X X X X X X X X XXX
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: 2025-10-18 06:48:24 CT</p>
+    <p>Build: 2025-10-18 06:51:08 CT</p>
   </footer>
 
   <!-- Save Modal -->

@@ -86,7 +86,10 @@ if (!app) {
 }
 
 app.innerHTML = `
-  <h1><img src="/logo.png" alt="Pocket Penetration" class="header-logo"> Bowling Fortune Teller 🎳</h1>
+  <h1>Bowling Fortune Teller 🎳</h1>
+  <div class="brought-to-you">
+    brought to you by <img src="/logo.png" alt="Pocket Penetration" class="sponsor-logo">
+  </div>
   <label for="scores-input">Frame-by-Frame Score(s)</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
   <div class="textarea-footer">
