@@ -1164,6 +1164,23 @@ function renderFrameImpact(frames: Frame[]): string {
   const heroes = sortedByContribution.slice(0, 3);
   const villains = sortedByContribution.slice(-3).reverse();
 
+  // Render complete scorecard
+  function renderCompleteScorecard(): string {
+    return `
+      <div class="complete-scorecard">
+        <div class="scorecard-row">
+          ${frameScores.map(fs => `
+            <div class="scorecard-full-frame ${fs.frameNumber === 10 ? 'tenth-frame' : ''}">
+              <div class="frame-number-label">${fs.frameNumber}</div>
+              <div class="frame-rolls-display">${fs.rollSymbols}</div>
+              <div class="frame-cumulative-score">${fs.cumulativeScore}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function renderFrame(fs: FrameScore, emoji: string): string {
     // Determine explanation based on what happened
     let explanation = '';
@@ -1209,6 +1226,8 @@ function renderFrameImpact(frames: Frame[]): string {
   return `
     <div class="frame-impact-section">
       <h3>Frame Impact Analysis</h3>
+
+      ${renderCompleteScorecard()}
 
       <div class="hero-frames">
         <h4>🔥 Hero Frames (Best Contributors)</h4>
