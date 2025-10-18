@@ -217,14 +217,26 @@ function createHistogram(result: GameResult): string {
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const maxCount = Math.max(...histogram.map(bin => bin.count));
   const minScore = result.stats.min;
   const maxScore = result.stats.max;
 
-  const barWidth = Math.max(2, chartWidth / histogram.length);
+  // Create a complete histogram with all scores from min to max
+  const histogramMap = new Map(histogram.map(bin => [bin.score, bin]));
+  const completeHistogram: Array<{ score: number; count: number; frequency: number }> = [];
+  for (let score = minScore; score <= maxScore; score++) {
+    const bin = histogramMap.get(score);
+    completeHistogram.push({
+      score,
+      count: bin?.count ?? 0,
+      frequency: bin?.frequency ?? 0
+    });
+  }
 
-  const bars = histogram.map((bin, i) => {
-    const x = padding.left + (i * chartWidth) / histogram.length;
+  const maxCount = Math.max(...completeHistogram.map(bin => bin.count));
+  const barWidth = Math.max(2, chartWidth / completeHistogram.length);
+
+  const bars = completeHistogram.map((bin, i) => {
+    const x = padding.left + (i * chartWidth) / completeHistogram.length;
     const barHeight = (bin.count / maxCount) * chartHeight;
     const y = padding.top + chartHeight - barHeight;
     const isActual = bin.score === actualScore;
@@ -241,11 +253,9 @@ function createHistogram(result: GameResult): string {
     </rect>`;
   }).join('');
 
-  // Add median line - position it at the median bin's location
-  const medianBinIndex = histogram.findIndex(bin => bin.score === median);
-  const medianX = medianBinIndex >= 0
-    ? padding.left + (medianBinIndex * chartWidth) / histogram.length + barWidth / 2
-    : padding.left + ((median - minScore) / (maxScore - minScore)) * chartWidth; // fallback
+  // Add median line - now that bars are continuous from min to max, position is straightforward
+  const medianBinIndex = median - minScore;
+  const medianX = padding.left + (medianBinIndex * chartWidth) / completeHistogram.length + barWidth / 2;
   const medianLine = `
     <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
           stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
@@ -388,9 +398,21 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const maxCount = Math.max(...histogram.map(bin => bin.count));
   const minScore = histogram[0].score;
   const maxScore = histogram[histogram.length - 1].score;
+
+  // Create a complete histogram with all scores from min to max
+  const histogramMap = new Map(histogram.map(bin => [bin.score, bin]));
+  const completeHistogram: Array<{ score: number; count: number }> = [];
+  for (let score = minScore; score <= maxScore; score++) {
+    const bin = histogramMap.get(score);
+    completeHistogram.push({
+      score,
+      count: bin?.count ?? 0
+    });
+  }
+
+  const maxCount = Math.max(...completeHistogram.map(bin => bin.count));
 
   // Calculate median for series
   const totalCombinations = Array.from(distribution.values()).reduce((sum, count) => sum + count, 0);
@@ -404,10 +426,10 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
     }
   }
 
-  const barWidth = Math.max(2, chartWidth / histogram.length);
+  const barWidth = Math.max(2, chartWidth / completeHistogram.length);
 
-  const bars = histogram.map((bin, i) => {
-    const x = padding.left + (i * chartWidth) / histogram.length;
+  const bars = completeHistogram.map((bin, i) => {
+    const x = padding.left + (i * chartWidth) / completeHistogram.length;
     const barHeight = (bin.count / maxCount) * chartHeight;
     const y = padding.top + chartHeight - barHeight;
     const isActual = bin.score === totalScore;
@@ -424,11 +446,9 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
     </rect>`;
   }).join('');
 
-  // Add median line - position it at the median bin's location
-  const medianBinIndex = histogram.findIndex(bin => bin.score === seriesMedian);
-  const medianX = medianBinIndex >= 0
-    ? padding.left + (medianBinIndex * chartWidth) / histogram.length + barWidth / 2
-    : padding.left + ((seriesMedian - minScore) / (maxScore - minScore)) * chartWidth; // fallback
+  // Add median line - now that bars are continuous from min to max, position is straightforward
+  const medianBinIndex = seriesMedian - minScore;
+  const medianX = padding.left + (medianBinIndex * chartWidth) / completeHistogram.length + barWidth / 2;
   const medianLine = `
     <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
           stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
