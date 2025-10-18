@@ -1173,52 +1173,57 @@ function renderFrameImpact(frames: Frame[]): string {
     return `
       <div class="complete-scorecard">
         <div class="scorecard-row">
-          ${frameScores.map(fs => `
-            <div class="scorecard-full-frame ${fs.frameNumber === 10 ? 'tenth-frame' : ''}">
-              <div class="frame-number-label">${fs.frameNumber}</div>
-              <div class="frame-rolls-display">${fs.rollSymbols}</div>
-              <div class="frame-cumulative-score">${fs.cumulativeScore}</div>
-            </div>
-          `).join('')}
+          ${frameScores.map(fs => {
+            // Find if this frame is lucky or unlucky
+            const impact = impactAnalysis.find(ia => ia.frameNumber === fs.frameNumber);
+            let emoji = '';
+            let frameClass = '';
+
+            if (impact) {
+              if (impact.positionBenefit >= LUCKY_THRESHOLD) {
+                emoji = '🍀';
+                frameClass = 'lucky-frame';
+              } else if (impact.positionBenefit <= UNLUCKY_THRESHOLD) {
+                emoji = '💔';
+                frameClass = 'unlucky-frame';
+              }
+            }
+
+            return `
+              <div class="scorecard-full-frame ${fs.frameNumber === 10 ? 'tenth-frame' : ''} ${frameClass}">
+                <div class="frame-number-label">${fs.frameNumber}</div>
+                ${emoji ? `<div class="frame-emoji-indicator">${emoji}</div>` : ''}
+                <div class="frame-rolls-display">${fs.rollSymbols}</div>
+                <div class="frame-cumulative-score">${fs.cumulativeScore}</div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }
 
-  function renderImpactFrame(impact: FrameImpactAnalysis, emoji: string): string {
-    const benefitSign = impact.positionBenefit >= 0 ? '+' : '';
-    const frameScore = frameScores.find(fs => fs.frameNumber === impact.frameNumber);
-    const cumulativeScore = frameScore?.cumulativeScore || 0;
-
-    return `
-      <div class="scorecard-frame">
-        <div class="frame-emoji">${emoji}</div>
-        <div class="frame-rolls">${impact.rollSymbols}</div>
-        <div class="frame-score">${cumulativeScore}</div>
-        <div class="frame-benefit ${impact.positionBenefit >= 0 ? 'positive' : 'negative'}">${benefitSign}${impact.positionBenefit}</div>
-        <div class="frame-number">Frame ${impact.frameNumber}</div>
-        <div class="frame-explanation">${impact.explanation}</div>
-      </div>
-    `;
-  }
-
   const luckySection = luckiest.length > 0 ? `
-    <div class="hero-frames">
-      <h4>🍀 Luckiest Frames (±${LUCKY_THRESHOLD}+ pins above average)</h4>
-      <p class="section-explanation">These frames scored more than average due to favorable positioning in the game order</p>
-      <div class="scorecard-frames">
-        ${luckiest.map(impact => renderImpactFrame(impact, '🍀')).join('')}
-      </div>
+    <div class="impact-list">
+      <h4>🍀 Luckiest Frames (${LUCKY_THRESHOLD}+ pins above average)</h4>
+      <ul class="impact-bullets">
+        ${luckiest.map(impact => {
+          const benefitSign = impact.positionBenefit >= 0 ? '+' : '';
+          return `<li><strong>Frame ${impact.frameNumber} (${impact.rollSymbols})</strong>: ${impact.explanation} <span class="benefit-badge positive">${benefitSign}${impact.positionBenefit}</span></li>`;
+        }).join('')}
+      </ul>
     </div>
   ` : '';
 
   const unluckySection = unluckiest.length > 0 ? `
-    <div class="villain-frames">
-      <h4>💔 Unluckiest Frames (±${Math.abs(UNLUCKY_THRESHOLD)}+ pins below average)</h4>
-      <p class="section-explanation">These frames scored less than average due to unfavorable positioning in the game order</p>
-      <div class="scorecard-frames">
-        ${unluckiest.map(impact => renderImpactFrame(impact, '💔')).join('')}
-      </div>
+    <div class="impact-list">
+      <h4>💔 Unluckiest Frames (${Math.abs(UNLUCKY_THRESHOLD)}+ pins below average)</h4>
+      <ul class="impact-bullets">
+        ${unluckiest.map(impact => {
+          const benefitSign = impact.positionBenefit >= 0 ? '+' : '';
+          return `<li><strong>Frame ${impact.frameNumber} (${impact.rollSymbols})</strong>: ${impact.explanation} <span class="benefit-badge negative">${benefitSign}${impact.positionBenefit}</span></li>`;
+        }).join('')}
+      </ul>
     </div>
   ` : '';
 
