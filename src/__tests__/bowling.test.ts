@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseGame, scoreGame } from '../bowling';
+import { parseGame, scoreGame, calculatePermutationStats } from '../bowling';
 
 describe('parseGame', () => {
   test('parses a perfect game', () => {
@@ -54,4 +54,23 @@ describe('scoreGame', () => {
       expect(scoreGame(parsed.frames)).toBe(expected);
     });
   }
+});
+
+describe('calculatePermutationStats', () => {
+  test('calculates correct median for 81 X 9/ 8/ X 8/ X 81 9- XX9', () => {
+    const input = '81 X 9/ 8/ X 8/ X 81 9- XX9';
+    const parsed = parseGame(input);
+    if (parsed.kind !== 'success') {
+      throw new Error('Failed to parse input');
+    }
+
+    const actualScore = scoreGame(parsed.frames);
+    const stats = calculatePermutationStats(parsed.frames);
+
+    expect(actualScore).toBe(173);
+    expect(stats.permutationCount).toBe(362880);
+    expect(stats.median).toBe(181);
+    expect(stats.min).toBe(168);
+    expect(stats.max).toBe(204);
+  });
 });

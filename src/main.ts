@@ -241,8 +241,11 @@ function createHistogram(result: GameResult): string {
     </rect>`;
   }).join('');
 
-  // Add median line
-  const medianX = padding.left + ((median - minScore) / (maxScore - minScore)) * chartWidth;
+  // Add median line - position it at the median bin's location
+  const medianBinIndex = histogram.findIndex(bin => bin.score === median);
+  const medianX = medianBinIndex >= 0
+    ? padding.left + (medianBinIndex * chartWidth) / histogram.length + barWidth / 2
+    : padding.left + ((median - minScore) / (maxScore - minScore)) * chartWidth; // fallback
   const medianLine = `
     <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
           stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
@@ -421,8 +424,11 @@ function createSeriesHistogram(results: GameResult[], totalScore: number): strin
     </rect>`;
   }).join('');
 
-  // Add median line
-  const medianX = padding.left + ((seriesMedian - minScore) / (maxScore - minScore)) * chartWidth;
+  // Add median line - position it at the median bin's location
+  const medianBinIndex = histogram.findIndex(bin => bin.score === seriesMedian);
+  const medianX = medianBinIndex >= 0
+    ? padding.left + (medianBinIndex * chartWidth) / histogram.length + barWidth / 2
+    : padding.left + ((seriesMedian - minScore) / (maxScore - minScore)) * chartWidth; // fallback
   const medianLine = `
     <line x1="${medianX}" y1="${padding.top}" x2="${medianX}" y2="${padding.top + chartHeight}"
           stroke="#ec4899" stroke-width="2" stroke-dasharray="5,5" />
