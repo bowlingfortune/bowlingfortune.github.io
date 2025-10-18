@@ -44,17 +44,17 @@ const exampleScenarios = [
   {
     name: 'Lucky Game',
     description: 'Actual score much higher than median - very favorable frame order',
-    score: 'X X X 9/ X X 81 X X X9/'
+    score: '81 72 63 54 9/ X X X X XXX'
   },
   {
     name: 'Unlucky Game',
     description: 'Actual score lower than median - unfavorable frame order',
-    score: '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9'
+    score: '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/0'
   },
   {
     name: 'Average Game',
-    description: 'Typical performance around 150',
-    score: '9/ X 81 7/ X X 9- 90 X XX6'
+    description: 'Typical performance - score close to median',
+    score: '5/ 4/ 3/ 2/ 1/ 6/ 7/ 8/ 9/ 1/0'
   },
   {
     name: 'Low Score Game',

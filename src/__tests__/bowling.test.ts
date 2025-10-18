@@ -127,33 +127,51 @@ describe('example scenarios', () => {
     }
   });
 
-  test('Lucky Game', () => {
-    const input = 'X X X 9/ X X 81 X X X9/';
+  test('Lucky Game - should have high percentile and positive z-score', () => {
+    const input = '81 72 63 54 9/ X X X X XXX';
     const result = parseGame(input);
     expect(result.kind).toBe('success');
     if (result.kind === 'success') {
       expect(result.frames).toHaveLength(10);
-      expect(scoreGame(result.frames)).toBeGreaterThan(0);
+      const score = scoreGame(result.frames);
+      expect(score).toBe(206);
+
+      const stats = calculatePermutationStats(result.frames);
+      expect(stats.actualPercentile).toBeGreaterThanOrEqual(75);
+      expect(stats.zScore).toBeGreaterThan(0.5);
+      expect(score).toBeGreaterThan(stats.median);
     }
   });
 
-  test('Unlucky Game', () => {
-    const input = '9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/ 9/9';
+  test('Unlucky Game - should have low percentile and negative z-score', () => {
+    const input = '9/ 8/ 7/ 6/ 5/ 4/ 3/ 2/ 1/ 9/0';
     const result = parseGame(input);
     expect(result.kind).toBe('success');
     if (result.kind === 'success') {
       expect(result.frames).toHaveLength(10);
-      expect(scoreGame(result.frames)).toBe(190);
+      const score = scoreGame(result.frames);
+      expect(score).toBe(145);
+
+      const stats = calculatePermutationStats(result.frames);
+      expect(stats.actualPercentile).toBeLessThanOrEqual(25);
+      expect(stats.zScore).toBeLessThan(-0.5);
+      expect(score).toBeLessThan(stats.median);
     }
   });
 
-  test('Average Game', () => {
-    const input = '9/ X 81 7/ X X 9- 90 X XX6';
+  test('Average Game - should have percentile near 50% and z-score near 0', () => {
+    const input = '5/ 4/ 3/ 2/ 1/ 6/ 7/ 8/ 9/ 1/0';
     const result = parseGame(input);
     expect(result.kind).toBe('success');
     if (result.kind === 'success') {
       expect(result.frames).toHaveLength(10);
-      expect(scoreGame(result.frames)).toBe(190);
+      const score = scoreGame(result.frames);
+      expect(score).toBe(141);
+
+      const stats = calculatePermutationStats(result.frames);
+      expect(stats.actualPercentile).toBeGreaterThanOrEqual(40);
+      expect(stats.actualPercentile).toBeLessThanOrEqual(60);
+      expect(Math.abs(stats.zScore)).toBeLessThan(0.5);
     }
   });
 
@@ -173,7 +191,11 @@ describe('example scenarios', () => {
     expect(result.kind).toBe('success');
     if (result.kind === 'success') {
       expect(result.frames).toHaveLength(10);
-      expect(scoreGame(result.frames)).toBeGreaterThan(0);
+      const score = scoreGame(result.frames);
+      expect(score).toBe(154);
+      // This game is all spares with descending bonus values, making it unlucky
+      const stats = calculatePermutationStats(result.frames);
+      expect(score).toBeLessThan(stats.median);
     }
   });
 });
