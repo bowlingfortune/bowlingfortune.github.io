@@ -785,9 +785,8 @@ button:active {
 .complete-scorecard {
   margin: 2rem 0;
   padding: 1rem;
-  background: rgba(30, 41, 59, 0.6);
-  border-radius: 0.5rem;
-  border: 2px solid rgba(148, 163, 184, 0.3);
+  background: transparent;
+  border: none;
   overflow-x: auto;
 }
 
