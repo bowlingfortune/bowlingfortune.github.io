@@ -391,8 +391,11 @@ async function importFromLaneTalk() {
   showLaneTalkStatus('Fetching games from LaneTalk...', 'loading');
 
   try {
-    // Fetch the HTML from LaneTalk
-    const response = await fetch(url);
+    // Use CORS proxy to fetch from HTTP URL
+    // allOrigins is a free CORS proxy service
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+    const response = await fetch(proxyUrl);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
