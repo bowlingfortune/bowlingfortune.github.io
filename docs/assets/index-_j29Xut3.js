@@ -13,15 +13,11 @@ X X X X X X X X X XXX
       <input
         type="url"
         id="lanetalk-url"
-        placeholder="Paste a LaneTalk shared link to import games..."
-        aria-describedby="lanetalk-help"
+        placeholder="http://shared.lanetalk.com/7c733....."
       />
-      <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import</button>
+      <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import from LaneTalk</button>
     </div>
     <div id="lanetalk-status" class="lanetalk-status" role="status" aria-live="polite"></div>
-    <p id="lanetalk-help" class="lanetalk-help">
-      Paste a LaneTalk shared link to automatically import game scores
-    </p>
   </div>
 
   <label for="scores-input">
@@ -82,7 +78,7 @@ X X X X X X X X X XXX
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
-    <p>Build: 2025-11-01 01:58:35 CT</p>
+    <p>Build: 2025-11-01 02:00:29 CT</p>
   </footer>
 
   <!-- Save Modal -->

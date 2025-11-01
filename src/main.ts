@@ -97,15 +97,11 @@ app.innerHTML = `
       <input
         type="url"
         id="lanetalk-url"
-        placeholder="Paste a LaneTalk shared link to import games..."
-        aria-describedby="lanetalk-help"
+        placeholder="http://shared.lanetalk.com/7c733....."
       />
-      <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import</button>
+      <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import from LaneTalk</button>
     </div>
     <div id="lanetalk-status" class="lanetalk-status" role="status" aria-live="polite"></div>
-    <p id="lanetalk-help" class="lanetalk-help">
-      Paste a LaneTalk shared link to automatically import game scores
-    </p>
   </div>
 
   <label for="scores-input">

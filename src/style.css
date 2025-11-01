@@ -1027,7 +1027,7 @@ button:active {
 
 /* LaneTalk Import Section */
 .lanetalk-import-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .lanetalk-import-row {
@@ -1083,13 +1083,6 @@ button:active {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
   color: #93c5fd;
-}
-
-.lanetalk-help {
-  margin: 0.25rem 0 0.5rem 0;
-  font-size: 0.85rem;
-  color: #64748b;
-  line-height: 1.4;
 }
 
 /* Help Icon */
