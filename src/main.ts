@@ -1,6 +1,7 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore, analyzeFramePositionalImpact, FrameImpactAnalysis } from './bowling';
-import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame } from './storage';
+import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame, saveDraft, loadDraft, clearDraft } from './storage';
+import { parseLaneTalkHTML, isValidLaneTalkURL, LaneTalkData } from './lanetalk';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -90,7 +91,31 @@ app.innerHTML = `
   <div class="brought-to-you">
     brought to you by <img src="/logo.png" alt="Pocket Penetration" class="sponsor-logo">
   </div>
-  <label for="scores-input">Frame-by-Frame Score(s)</label>
+  <!-- LaneTalk Import Section -->
+  <div class="lanetalk-import-section">
+    <button type="button" id="lanetalk-toggle" class="lanetalk-toggle" aria-expanded="false">
+      Import from LaneTalk (optional)
+      <span class="toggle-arrow">▶</span>
+    </button>
+    <div id="lanetalk-import-content" class="lanetalk-import-content" aria-hidden="true">
+      <div class="lanetalk-import-row">
+        <label for="lanetalk-url">LaneTalk URL:</label>
+        <input
+          type="url"
+          id="lanetalk-url"
+          placeholder="http://shared.lanetalk.com/..."
+          aria-describedby="lanetalk-help"
+        />
+        <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import</button>
+      </div>
+      <div id="lanetalk-status" class="lanetalk-status" role="status" aria-live="polite"></div>
+      <p id="lanetalk-help" class="lanetalk-help">
+        Paste a LaneTalk shared link to automatically import game scores
+      </p>
+    </div>
+  </div>
+
+  <label for="scores-input">Or enter frame-by-frame notation:</label>
   <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
   <div class="textarea-footer">
     <div class="example-dropdown-container">
@@ -190,6 +215,11 @@ const clearButton = document.querySelector<HTMLButtonElement>('#clear-btn');
 const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
 const exampleDropdown = document.querySelector<HTMLDivElement>('#example-dropdown');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
+const laneTalkToggle = document.querySelector<HTMLButtonElement>('#lanetalk-toggle');
+const laneTalkImportContent = document.querySelector<HTMLDivElement>('#lanetalk-import-content');
+const laneTalkUrlInput = document.querySelector<HTMLInputElement>('#lanetalk-url');
+const laneTalkImportBtn = document.querySelector<HTMLButtonElement>('#lanetalk-import-btn');
+const laneTalkStatus = document.querySelector<HTMLDivElement>('#lanetalk-status');
 const saveButton = document.querySelector<HTMLButtonElement>('#save-btn');
 const savedGamesButton = document.querySelector<HTMLButtonElement>('#saved-games-btn');
 const savedCountBadge = document.querySelector<HTMLSpanElement>('#saved-count');
@@ -212,6 +242,7 @@ const savedGamesList = document.querySelector<HTMLDivElement>('#saved-games-list
 const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-saved-count');
 
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
+    !laneTalkToggle || !laneTalkImportContent || !laneTalkUrlInput || !laneTalkImportBtn || !laneTalkStatus ||
     !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
     !saveDescriptionInput || !saveLeagueInput || !leagueDatalist || !saveDateInput || !saveCancelButton ||
     !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !searchSavedGamesInput ||
@@ -222,7 +253,24 @@ if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDrop
 clearButton.addEventListener('click', () => {
   textarea.value = '';
   feedback.innerHTML = '';
+  clearDraft();
   textarea.focus();
+});
+
+// Auto-save draft with debouncing
+let draftSaveTimeout: number | undefined;
+
+function debouncedSaveDraft(content: string) {
+  if (draftSaveTimeout !== undefined) {
+    clearTimeout(draftSaveTimeout);
+  }
+  draftSaveTimeout = window.setTimeout(() => {
+    saveDraft(content);
+  }, 500); // Save 500ms after user stops typing
+}
+
+textarea.addEventListener('input', () => {
+  debouncedSaveDraft(textarea.value);
 });
 
 // Dropdown functionality
@@ -281,6 +329,124 @@ exampleDropdown.addEventListener('keydown', (e) => {
       nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
     }
     items[nextIndex]?.focus();
+  }
+});
+
+// LaneTalk Import Functionality
+let isLaneTalkExpanded = false;
+
+function toggleLaneTalkSection() {
+  isLaneTalkExpanded = !isLaneTalkExpanded;
+  laneTalkImportContent.classList.toggle('show', isLaneTalkExpanded);
+  laneTalkToggle.setAttribute('aria-expanded', isLaneTalkExpanded.toString());
+  laneTalkImportContent.setAttribute('aria-hidden', (!isLaneTalkExpanded).toString());
+
+  const arrow = laneTalkToggle.querySelector('.toggle-arrow');
+  if (arrow) {
+    arrow.textContent = isLaneTalkExpanded ? '▼' : '▶';
+  }
+
+  if (isLaneTalkExpanded) {
+    laneTalkUrlInput.focus();
+  }
+}
+
+function collapseLaneTalkSection() {
+  isLaneTalkExpanded = false;
+  laneTalkImportContent.classList.remove('show');
+  laneTalkToggle.setAttribute('aria-expanded', 'false');
+  laneTalkImportContent.setAttribute('aria-hidden', 'true');
+
+  const arrow = laneTalkToggle.querySelector('.toggle-arrow');
+  if (arrow) {
+    arrow.textContent = '▶';
+  }
+}
+
+function showLaneTalkStatus(message: string, type: 'error' | 'success' | 'loading') {
+  laneTalkStatus.textContent = message;
+  laneTalkStatus.className = `lanetalk-status ${type}`;
+}
+
+function clearLaneTalkStatus() {
+  laneTalkStatus.textContent = '';
+  laneTalkStatus.className = 'lanetalk-status';
+}
+
+async function importFromLaneTalk() {
+  const url = laneTalkUrlInput.value.trim();
+
+  if (!url) {
+    showLaneTalkStatus('Please enter a LaneTalk URL', 'error');
+    return;
+  }
+
+  if (!isValidLaneTalkURL(url)) {
+    showLaneTalkStatus('Invalid LaneTalk URL. Must be from shared.lanetalk.com', 'error');
+    return;
+  }
+
+  // Disable button and show loading state
+  laneTalkImportBtn.disabled = true;
+  showLaneTalkStatus('Fetching games from LaneTalk...', 'loading');
+
+  try {
+    // Fetch the HTML from LaneTalk
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+    }
+
+    const html = await response.text();
+
+    // Parse the HTML
+    const laneTalkData = parseLaneTalkHTML(html);
+
+    if (laneTalkData.games.length === 0) {
+      throw new Error('No games found in LaneTalk data');
+    }
+
+    // Combine all games into textarea format (one per line)
+    const gamesText = laneTalkData.games.map(g => g.frames).join('\n');
+
+    // Populate textarea
+    textarea.value = gamesText;
+
+    // Show success message
+    const gameWord = laneTalkData.games.length === 1 ? 'game' : 'games';
+    showLaneTalkStatus(
+      `✓ Successfully imported ${laneTalkData.games.length} ${gameWord}!`,
+      'success'
+    );
+
+    // Clear URL input
+    laneTalkUrlInput.value = '';
+
+    // Auto-collapse section after a short delay
+    setTimeout(() => {
+      collapseLaneTalkSection();
+      clearLaneTalkStatus();
+      textarea.focus();
+    }, 2000);
+
+  } catch (error) {
+    console.error('LaneTalk import error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    showLaneTalkStatus(`Error: ${errorMessage}`, 'error');
+  } finally {
+    laneTalkImportBtn.disabled = false;
+  }
+}
+
+laneTalkToggle.addEventListener('click', toggleLaneTalkSection);
+laneTalkImportBtn.addEventListener('click', importFromLaneTalk);
+
+// Allow Enter key in URL input to trigger import
+laneTalkUrlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    importFromLaneTalk();
   }
 });
 
@@ -534,6 +700,7 @@ saveForm.addEventListener('submit', (e) => {
   try {
     saveGame(scores, description, league, date);
     closeSaveModal();
+    clearDraft(); // Clear draft after successful save
     updateSavedGamesCount();
     // If sidebar is open, refresh the list
     if (savedGamesSidebar.classList.contains('show')) {
@@ -613,18 +780,26 @@ importFileInput.addEventListener('change', (e) => {
 // Initialize saved games count on load
 updateSavedGamesCount();
 
-// Check for scores in URL on load
+// Check for scores in URL on load, or restore draft
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const encodedScores = params.get('scores');
 
   if (encodedScores) {
+    // URL parameters take priority
     try {
       const decodedScores = atob(encodedScores);
       textarea.value = decodedScores;
       processScores();
     } catch (e) {
       console.error('Failed to decode scores from URL', e);
+    }
+  } else {
+    // No URL parameters, check for saved draft
+    const draft = loadDraft();
+    if (draft) {
+      textarea.value = draft;
+      processScores(); // Auto-submit to re-render results
     }
   }
 });

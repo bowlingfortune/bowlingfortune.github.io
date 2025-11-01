@@ -17,6 +17,7 @@ interface SavedGamesStorage {
 }
 
 const STORAGE_KEY = 'bowling_fortune_saved_games';
+const DRAFT_KEY = 'bowling_fortune_draft';
 const MAX_SAVED_GAMES = 10000;
 
 export function saveGame(
@@ -147,5 +148,35 @@ function calculateTotalScore(scores: string): number | undefined {
     return total;
   } catch {
     return undefined;
+  }
+}
+
+// Draft management
+export function saveDraft(content: string): void {
+  try {
+    if (content.trim()) {
+      localStorage.setItem(DRAFT_KEY, content);
+    } else {
+      clearDraft();
+    }
+  } catch (e) {
+    console.error('Failed to save draft', e);
+  }
+}
+
+export function loadDraft(): string | null {
+  try {
+    return localStorage.getItem(DRAFT_KEY);
+  } catch (e) {
+    console.error('Failed to load draft', e);
+    return null;
+  }
+}
+
+export function clearDraft(): void {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch (e) {
+    console.error('Failed to clear draft', e);
   }
 }
