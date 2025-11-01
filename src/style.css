@@ -105,9 +105,17 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 1rem;
+  margin-top: 0.75rem;
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.left-buttons,
+.right-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .secondary-btn {
@@ -1022,60 +1030,11 @@ button:active {
   margin-bottom: 1.5rem;
 }
 
-.lanetalk-toggle {
-  width: 100%;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: #60a5fa;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.lanetalk-toggle:hover {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.4);
-  transform: none;
-}
-
-.lanetalk-toggle .toggle-arrow {
-  font-size: 0.75rem;
-  transition: transform 0.2s ease;
-}
-
-.lanetalk-import-content {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: all 0.3s ease;
-  margin-top: 0;
-}
-
-.lanetalk-import-content.show {
-  max-height: 300px;
-  opacity: 1;
-  margin-top: 1rem;
-}
-
 .lanetalk-import-row {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.lanetalk-import-row label {
-  margin-bottom: 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #94a3b8;
+  margin-bottom: 0.5rem;
 }
 
 .lanetalk-import-row input[type="url"] {
@@ -1127,22 +1086,131 @@ button:active {
 }
 
 .lanetalk-help {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   font-size: 0.85rem;
   color: #64748b;
   line-height: 1.4;
 }
 
+/* Help Icon */
+.help-icon {
+  background: none;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.help-icon:hover {
+  color: #93c5fd;
+  transform: none;
+}
+
+.help-icon svg {
+  display: block;
+}
+
+/* Help Dialog */
+.help-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(30, 41, 59, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.75rem;
+  padding: 0;
+  max-width: 500px;
+  width: calc(100vw - 2rem);
+  z-index: 10001;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.help-dialog.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.help-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.help-dialog-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.help-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.help-dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #fbbf24;
+}
+
+.help-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  width: auto;
+  transition: color 0.2s ease;
+}
+
+.help-close-btn:hover {
+  color: #e2e8f0;
+  transform: none;
+}
+
+.help-dialog-body {
+  padding: 1.5rem;
+  color: #cbd5e1;
+}
+
+.help-dialog-body p {
+  margin: 0 0 1rem 0;
+}
+
+.help-dialog-body ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.help-dialog-body li {
+  margin: 0.5rem 0;
+}
+
 @media (min-width: 640px) {
   .lanetalk-import-row {
     flex-direction: row;
-    align-items: flex-end;
-  }
-
-  .lanetalk-import-row label {
-    flex-shrink: 0;
-    align-self: center;
-    margin-bottom: 0;
+    align-items: center;
   }
 
   .lanetalk-import-row input[type="url"] {

@@ -93,62 +93,76 @@ app.innerHTML = `
   </div>
   <!-- LaneTalk Import Section -->
   <div class="lanetalk-import-section">
-    <button type="button" id="lanetalk-toggle" class="lanetalk-toggle" aria-expanded="false">
-      Import from LaneTalk (optional)
-      <span class="toggle-arrow">▶</span>
-    </button>
-    <div id="lanetalk-import-content" class="lanetalk-import-content" aria-hidden="true">
-      <div class="lanetalk-import-row">
-        <label for="lanetalk-url">LaneTalk URL:</label>
-        <input
-          type="url"
-          id="lanetalk-url"
-          placeholder="http://shared.lanetalk.com/..."
-          aria-describedby="lanetalk-help"
-        />
-        <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import</button>
-      </div>
-      <div id="lanetalk-status" class="lanetalk-status" role="status" aria-live="polite"></div>
-      <p id="lanetalk-help" class="lanetalk-help">
-        Paste a LaneTalk shared link to automatically import game scores
-      </p>
+    <div class="lanetalk-import-row">
+      <input
+        type="url"
+        id="lanetalk-url"
+        placeholder="Paste a LaneTalk shared link to import games..."
+        aria-describedby="lanetalk-help"
+      />
+      <button type="button" id="lanetalk-import-btn" class="secondary-btn">Import</button>
     </div>
+    <div id="lanetalk-status" class="lanetalk-status" role="status" aria-live="polite"></div>
+    <p id="lanetalk-help" class="lanetalk-help">
+      Paste a LaneTalk shared link to automatically import game scores
+    </p>
   </div>
 
-  <label for="scores-input">Or enter frame-by-frame notation:</label>
-  <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="15" cols="50"></textarea>
+  <label for="scores-input">
+    Or enter frame-by-frame notation:
+    <button type="button" id="help-icon" class="help-icon" aria-label="Show help" title="Show valid characters">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold">?</text>
+      </svg>
+    </button>
+  </label>
+  <textarea id="scores-input" name="Frame-by-Frame Score(s)" placeholder="9/ X 81 7/ X X 9- 90 X XX6" aria-describedby="scores-help" rows="7" cols="50"></textarea>
   <div class="textarea-footer">
-    <div class="example-dropdown-container">
-      <button id="example-btn" type="button" class="secondary-btn example-btn" aria-haspopup="true" aria-expanded="false">
-        Try an example
-        <span class="dropdown-arrow">▼</span>
+    <div class="left-buttons">
+      <div class="example-dropdown-container">
+        <button id="example-btn" type="button" class="secondary-btn example-btn" aria-haspopup="true" aria-expanded="false">
+          Try an example
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div id="example-dropdown" class="example-dropdown" role="menu" aria-hidden="true">
+          ${exampleScenarios.map((scenario, index) => `
+            <button type="button" class="dropdown-item" data-example-index="${index}" role="menuitem">
+              <strong>${scenario.name}</strong>
+              <span class="dropdown-item-desc">${scenario.description}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+      <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
+    </div>
+    <div class="right-buttons">
+      <button id="save-btn" type="button" class="secondary-btn">💾 Save</button>
+      <button id="saved-games-btn" type="button" class="secondary-btn">
+        📋 Saved Games <span id="saved-count"></span>
       </button>
-      <div id="example-dropdown" class="example-dropdown" role="menu" aria-hidden="true">
-        ${exampleScenarios.map((scenario, index) => `
-          <button type="button" class="dropdown-item" data-example-index="${index}" role="menuitem">
-            <strong>${scenario.name}</strong>
-            <span class="dropdown-item-desc">${scenario.description}</span>
-          </button>
-        `).join('')}
+    </div>
+  </div>
+  <div id="scores-help" class="help-dialog" role="dialog" aria-labelledby="help-dialog-title" aria-hidden="true">
+    <div class="help-dialog-content">
+      <div class="help-dialog-header">
+        <h3 id="help-dialog-title">Valid Characters</h3>
+        <button type="button" id="help-close-btn" class="help-close-btn" aria-label="Close help">&times;</button>
+      </div>
+      <div class="help-dialog-body">
+        <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
+        <p>Enter one game per line.</p>
+        <p><strong>Valid characters:</strong></p>
+        <ul>
+          <li><strong>0-9</strong> - Number of pins knocked down</li>
+          <li><strong>/</strong> - Spare (knocked down remaining pins)</li>
+          <li><strong>X</strong> - Strike (knocked down all 10 pins)</li>
+          <li><strong>-</strong> - Gutter ball (counts the same as 0)</li>
+        </ul>
       </div>
     </div>
-    <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
-    <button id="save-btn" type="button" class="secondary-btn">💾 Save</button>
-    <button id="saved-games-btn" type="button" class="secondary-btn">
-      📋 Saved Games <span id="saved-count"></span>
-    </button>
   </div>
-  <div id="scores-help" class="description">
-    <p>Enter frame-by-frame scores. Use spaces or commas to separate frames.</p>
-    <p>Enter one game per line.</p>
-    <p>Valid characters:</p>
-    <ul>
-      <li>0-9</li>
-      <li>/</li>
-      <li>X</li>
-      <li>- (counts the same as 0)</li>
-    </ul>
-  </div>
+  <div id="help-dialog-overlay" class="help-dialog-overlay"></div>
   <button id="submit" type="button">Tell My Bowling Fortune</button>
   <div id="feedback" role="status" aria-live="polite"></div>
   <footer class="version">
@@ -215,11 +229,13 @@ const clearButton = document.querySelector<HTMLButtonElement>('#clear-btn');
 const exampleButton = document.querySelector<HTMLButtonElement>('#example-btn');
 const exampleDropdown = document.querySelector<HTMLDivElement>('#example-dropdown');
 const feedback = document.querySelector<HTMLDivElement>('#feedback');
-const laneTalkToggle = document.querySelector<HTMLButtonElement>('#lanetalk-toggle');
-const laneTalkImportContent = document.querySelector<HTMLDivElement>('#lanetalk-import-content');
 const laneTalkUrlInput = document.querySelector<HTMLInputElement>('#lanetalk-url');
 const laneTalkImportBtn = document.querySelector<HTMLButtonElement>('#lanetalk-import-btn');
 const laneTalkStatus = document.querySelector<HTMLDivElement>('#lanetalk-status');
+const helpIcon = document.querySelector<HTMLButtonElement>('#help-icon');
+const helpDialog = document.querySelector<HTMLDivElement>('#scores-help');
+const helpDialogOverlay = document.querySelector<HTMLDivElement>('#help-dialog-overlay');
+const helpCloseBtn = document.querySelector<HTMLButtonElement>('#help-close-btn');
 const saveButton = document.querySelector<HTMLButtonElement>('#save-btn');
 const savedGamesButton = document.querySelector<HTMLButtonElement>('#saved-games-btn');
 const savedCountBadge = document.querySelector<HTMLSpanElement>('#saved-count');
@@ -242,7 +258,8 @@ const savedGamesList = document.querySelector<HTMLDivElement>('#saved-games-list
 const sidebarSavedCount = document.querySelector<HTMLSpanElement>('#sidebar-saved-count');
 
 if (!textarea || !submitButton || !clearButton || !exampleButton || !exampleDropdown || !feedback ||
-    !laneTalkToggle || !laneTalkImportContent || !laneTalkUrlInput || !laneTalkImportBtn || !laneTalkStatus ||
+    !laneTalkUrlInput || !laneTalkImportBtn || !laneTalkStatus ||
+    !helpIcon || !helpDialog || !helpDialogOverlay || !helpCloseBtn ||
     !saveButton || !savedGamesButton || !savedCountBadge || !saveModalOverlay || !saveForm ||
     !saveDescriptionInput || !saveLeagueInput || !leagueDatalist || !saveDateInput || !saveCancelButton ||
     !savedGamesSidebar || !sidebarOverlay || !sidebarCloseButton || !searchSavedGamesInput ||
@@ -332,37 +349,28 @@ exampleDropdown.addEventListener('keydown', (e) => {
   }
 });
 
+// Help Dialog Functionality
+function showHelpDialog() {
+  helpDialog.classList.add('show');
+  helpDialogOverlay.classList.add('show');
+  helpDialog.setAttribute('aria-hidden', 'false');
+}
+
+function closeHelpDialog() {
+  helpDialog.classList.remove('show');
+  helpDialogOverlay.classList.remove('show');
+  helpDialog.setAttribute('aria-hidden', 'true');
+}
+
+helpIcon.addEventListener('click', (e) => {
+  e.preventDefault();
+  showHelpDialog();
+});
+
+helpCloseBtn.addEventListener('click', closeHelpDialog);
+helpDialogOverlay.addEventListener('click', closeHelpDialog);
+
 // LaneTalk Import Functionality
-let isLaneTalkExpanded = false;
-
-function toggleLaneTalkSection() {
-  isLaneTalkExpanded = !isLaneTalkExpanded;
-  laneTalkImportContent.classList.toggle('show', isLaneTalkExpanded);
-  laneTalkToggle.setAttribute('aria-expanded', isLaneTalkExpanded.toString());
-  laneTalkImportContent.setAttribute('aria-hidden', (!isLaneTalkExpanded).toString());
-
-  const arrow = laneTalkToggle.querySelector('.toggle-arrow');
-  if (arrow) {
-    arrow.textContent = isLaneTalkExpanded ? '▼' : '▶';
-  }
-
-  if (isLaneTalkExpanded) {
-    laneTalkUrlInput.focus();
-  }
-}
-
-function collapseLaneTalkSection() {
-  isLaneTalkExpanded = false;
-  laneTalkImportContent.classList.remove('show');
-  laneTalkToggle.setAttribute('aria-expanded', 'false');
-  laneTalkImportContent.setAttribute('aria-hidden', 'true');
-
-  const arrow = laneTalkToggle.querySelector('.toggle-arrow');
-  if (arrow) {
-    arrow.textContent = '▶';
-  }
-}
-
 function showLaneTalkStatus(message: string, type: 'error' | 'success' | 'loading') {
   laneTalkStatus.textContent = message;
   laneTalkStatus.className = `lanetalk-status ${type}`;
@@ -426,9 +434,8 @@ async function importFromLaneTalk() {
     // Clear URL input
     laneTalkUrlInput.value = '';
 
-    // Auto-collapse section after a short delay
+    // Clear status after a short delay
     setTimeout(() => {
-      collapseLaneTalkSection();
       clearLaneTalkStatus();
       textarea.focus();
     }, 2000);
@@ -442,7 +449,6 @@ async function importFromLaneTalk() {
   }
 }
 
-laneTalkToggle.addEventListener('click', toggleLaneTalkSection);
 laneTalkImportBtn.addEventListener('click', importFromLaneTalk);
 
 // Allow Enter key in URL input to trigger import
@@ -511,7 +517,12 @@ textarea.addEventListener('keydown', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    // Close sidebar first if open
+    // Close help dialog first if open
+    if (helpDialog.classList.contains('show')) {
+      closeHelpDialog();
+      return;
+    }
+    // Close sidebar if open
     if (savedGamesSidebar.classList.contains('show')) {
       closeSidebar();
       return;
