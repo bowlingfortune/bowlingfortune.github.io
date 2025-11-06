@@ -993,6 +993,10 @@ function getNarrative(result: GameResult): string {
     interpretation += ' You scored in the <strong>bottom quartile</strong> of possible orderings.';
   }
 
+  // Add actual pin difference from expected
+  const pinDiffStr = expectedPinsDiff >= 0 ? `+${expectedPinsDiff}` : `${expectedPinsDiff}`;
+  interpretation += ` Your actual score was <strong>${pinDiffStr} pins</strong> from the median.`;
+
   return interpretation;
 }
 
@@ -1237,6 +1241,9 @@ function renderSeriesSummary(results: GameResult[]): string {
   } else if (seriesPercentile <= 25) {
     seriesNarrative += ' You scored in the <strong>bottom quartile</strong> of possible combinations.';
   }
+
+  // Add actual pin difference from expected
+  seriesNarrative += ` Your series total was <strong>${expectedDiffStr} pins</strong> from the median.`;
 
   return `
     <article class="result-card series-summary">
