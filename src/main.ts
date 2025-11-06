@@ -1,7 +1,7 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore, analyzeFramePositionalImpact, FrameImpactAnalysis } from './bowling';
 import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame, saveDraft, loadDraft, clearDraft } from './storage';
-import { parseLaneTalkHTML, isValidLaneTalkURL, LaneTalkData } from './lanetalk';
+import { parseLaneTalkHTML, isValidLaneTalkURL, extractLaneTalkURL, LaneTalkData } from './lanetalk';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -378,14 +378,17 @@ function clearLaneTalkStatus() {
 }
 
 async function importFromLaneTalk() {
-  const url = laneTalkUrlInput.value.trim();
+  const inputText = laneTalkUrlInput.value.trim();
 
-  if (!url) {
+  if (!inputText) {
     showLaneTalkStatus('Please enter a LaneTalk URL', 'error');
     return;
   }
 
-  if (!isValidLaneTalkURL(url)) {
+  // Extract the URL from the pasted text (may contain descriptive text before the URL)
+  const url = extractLaneTalkURL(inputText);
+
+  if (!url || !isValidLaneTalkURL(url)) {
     showLaneTalkStatus('Invalid LaneTalk URL. Must be from shared.lanetalk.com', 'error');
     return;
   }

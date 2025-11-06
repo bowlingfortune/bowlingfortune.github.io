@@ -165,6 +165,21 @@ function extractMetadata(html: string): LaneTalkData['metadata'] {
 /**
  * Validate a LaneTalk URL
  */
+/**
+ * Extracts a LaneTalk URL from text that may contain extra descriptive content.
+ * LaneTalk sometimes includes text like "Tim Russell bowled 460 at South Shore Bowl" before the URL.
+ * This function finds and extracts just the URL portion.
+ *
+ * @param text - The text that may contain a LaneTalk URL
+ * @returns The extracted LaneTalk URL, or null if not found
+ */
+export function extractLaneTalkURL(text: string): string | null {
+  // Match URLs (http or https) that contain shared.lanetalk.com
+  const urlPattern = /https?:\/\/shared\.lanetalk\.com\/[^\s]*/i;
+  const match = text.match(urlPattern);
+  return match ? match[0] : null;
+}
+
 export function isValidLaneTalkURL(url: string): boolean {
   try {
     const parsed = new URL(url);
