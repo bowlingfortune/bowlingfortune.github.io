@@ -50,13 +50,14 @@ export function parseLaneTalkHTML(html: string): LaneTalkData {
     }
 
     // Find 10th frame in this game
+    // The 10th frame contains multiple internal-frame divs, each with their own throws section
     const tenthFrameMatch = gameHtml.match(
-      /<div class="lastFrame">.*?<div class="throws">(.*?)<\/div>\s*<div class="score">/s
+      /<div class="lastFrame">(.*?)<div class="score">/s
     );
 
     if (tenthFrameMatch) {
-      const throwSection = tenthFrameMatch[1];
-      const frameNotation = parseTenthFrameSection(throwSection);
+      const lastFrameContent = tenthFrameMatch[1];
+      const frameNotation = parseTenthFrameSection(lastFrameContent);
       frames.push(frameNotation);
     }
 
@@ -102,22 +103,27 @@ function parseFrameSection(html: string): string {
 
 /**
  * Parse the 10th frame section
+ * The 10th frame has up to 3 internal-frame divs, each containing a throws section
  */
 function parseTenthFrameSection(html: string): string {
-  // Find all roll values
-  const rollMatches = html.matchAll(/font-size: 20px[^>]*>\s*([XxX\-0-9]+)\s*<\/span>/g);
   const rolls: string[] = [];
 
-  for (const match of rollMatches) {
-    rolls.push(match[1]);
-  }
+  // Find all throws sections within the 10th frame
+  const throwsMatches = html.matchAll(/<div class="throws">(.*?)<\/div>(?:\s*<\/div>)?/gs);
 
-  // Count spare markers (triangles)
-  const spareCount = (html.match(/<div class="triangle"><\/div>/g) || []).length;
+  for (const throwMatch of throwsMatches) {
+    const throwContent = throwMatch[1];
 
-  // Add spare markers based on triangle count
-  for (let i = 0; i < spareCount; i++) {
-    rolls.push('/');
+    // Check for a spare marker (triangle) in this throw
+    if (throwContent.includes('<div class="triangle">')) {
+      rolls.push('/');
+    } else {
+      // Look for a numeric/letter roll value
+      const rollMatch = throwContent.match(/font-size: 20px[^>]*>\s*([XxX\-0-9]+)\s*<\/span>/);
+      if (rollMatch) {
+        rolls.push(rollMatch[1]);
+      }
+    }
   }
 
   return rolls.join('');
