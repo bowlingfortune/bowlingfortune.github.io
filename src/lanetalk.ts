@@ -169,6 +169,23 @@ function extractMetadata(html: string): LaneTalkData['metadata'] {
 }
 
 /**
+ * Extract a LaneTalk share URL from arbitrary text.
+ *
+ * LaneTalk's default "share" export wraps the link in prose, e.g.
+ * "Check out my games on LaneTalk! http://shared.lanetalk.com/abc123 Sent from ..."
+ * This returns the first shared.lanetalk.com URL found (with any trailing
+ * punctuation stripped), or null if none is present.
+ */
+export function extractLaneTalkURL(text: string): string | null {
+  const match = text.match(/https?:\/\/shared\.lanetalk\.com\/[^\s<>"'()]*/i);
+  if (!match) return null;
+
+  // Strip trailing punctuation that commonly follows a URL in prose.
+  const url = match[0].replace(/[.,;:!?]+$/, '');
+  return isValidLaneTalkURL(url) ? url : null;
+}
+
+/**
  * Validate a LaneTalk URL
  */
 export function isValidLaneTalkURL(url: string): boolean {

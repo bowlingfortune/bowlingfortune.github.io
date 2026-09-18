@@ -1,7 +1,7 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore, analyzeFramePositionalImpact, FrameImpactAnalysis } from './bowling';
 import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame, saveDraft, loadDraft, clearDraft } from './storage';
-import { parseLaneTalkHTML, isValidLaneTalkURL, LaneTalkData } from './lanetalk';
+import { parseLaneTalkHTML, isValidLaneTalkURL, extractLaneTalkURL, LaneTalkData } from './lanetalk';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -378,11 +378,19 @@ function clearLaneTalkStatus() {
 }
 
 async function importFromLaneTalk() {
-  const url = laneTalkUrlInput.value.trim();
+  const rawInput = laneTalkUrlInput.value.trim();
 
-  if (!url) {
+  if (!rawInput) {
     showLaneTalkStatus('Please enter a LaneTalk URL', 'error');
     return;
+  }
+
+  // Accept LaneTalk's default share text (prose surrounding the link) by
+  // pulling out just the URL. Falls back to the raw input so the existing
+  // validation error still fires for non-LaneTalk text.
+  const url = extractLaneTalkURL(rawInput) ?? rawInput;
+  if (url !== rawInput) {
+    laneTalkUrlInput.value = url;
   }
 
   if (!isValidLaneTalkURL(url)) {
@@ -446,6 +454,19 @@ async function importFromLaneTalk() {
 }
 
 laneTalkImportBtn.addEventListener('click', importFromLaneTalk);
+
+// On paste, strip any surrounding share text and keep only the LaneTalk URL
+laneTalkUrlInput.addEventListener('paste', (e) => {
+  const pasted = e.clipboardData?.getData('text');
+  if (!pasted) return;
+
+  const url = extractLaneTalkURL(pasted);
+  if (url && url !== pasted.trim()) {
+    e.preventDefault();
+    laneTalkUrlInput.value = url;
+    clearLaneTalkStatus();
+  }
+});
 
 // Allow Enter key in URL input to trigger import
 laneTalkUrlInput.addEventListener('keydown', (e) => {
