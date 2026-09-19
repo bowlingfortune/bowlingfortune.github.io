@@ -1,7 +1,7 @@
 import './style.css';
 import { parseGame, scoreGame, ParseError, Frame, calculatePermutationStats, PermutationStats, calculateFrameScores, FrameScore, analyzeFramePositionalImpact, FrameImpactAnalysis } from './bowling';
 import { saveGame, loadGames, deleteGame, clearAllGames, getUniqueLeagues, exportGames, importGames, SavedGame, saveDraft, loadDraft, clearDraft } from './storage';
-import { parseLaneTalkHTML, isValidLaneTalkURL, extractLaneTalkURL, LaneTalkData } from './lanetalk';
+import { parseLaneTalkHTML, isValidLaneTalkURL, extractLaneTalkURL, fetchLaneTalkHTML, LaneTalkData } from './lanetalk';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -377,6 +377,16 @@ function clearLaneTalkStatus() {
   laneTalkStatus.className = 'lanetalk-status';
 }
 
+// Report retry progress so a slow proxy never looks like a frozen UI.
+function reportFetchAttempt(attempt: number, total: number) {
+  showLaneTalkStatus(
+    attempt === 0
+      ? 'Fetching games from LaneTalk...'
+      : `Proxy was slow — retrying (${attempt + 1} of ${total})...`,
+    'loading'
+  );
+}
+
 async function importFromLaneTalk() {
   const rawInput = laneTalkUrlInput.value.trim();
 
@@ -403,17 +413,8 @@ async function importFromLaneTalk() {
   showLaneTalkStatus('Fetching games from LaneTalk...', 'loading');
 
   try {
-    // Use CORS proxy to fetch from HTTP URL
-    // allOrigins is a free CORS proxy service
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-
-    const response = await fetch(proxyUrl);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
-    }
-
-    const html = await response.text();
+    // Fetch through a CORS proxy, with per-attempt timeouts and retries.
+    const html = await fetchLaneTalkHTML(url, { onAttempt: reportFetchAttempt });
 
     // Parse the HTML
     const laneTalkData = parseLaneTalkHTML(html);

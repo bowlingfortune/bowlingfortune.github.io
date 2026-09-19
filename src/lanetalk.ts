@@ -196,3 +196,118 @@ export function isValidLaneTalkURL(url: string): boolean {
     return false;
   }
 }
+
+/**
+ * shared.lanetalk.com is HTTP-only, so an HTTPS page cannot fetch it directly
+ * (mixed content) and must go through a CORS proxy. The free public proxies are
+ * unreliable — timeouts and HTTP 522s are common — so each request gets a hard
+ * timeout and we retry across endpoints. Without a timeout, a hung proxy leaves
+ * the UI stuck on "Fetching games from LaneTalk..." indefinitely.
+ */
+export const LANETALK_PROXIES: Array<{
+  buildUrl: (url: string) => string;
+  extract: (body: string) => string;
+}> = [
+  {
+    buildUrl: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    extract: (body) => body,
+  },
+  {
+    buildUrl: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    extract: (body) => {
+      const parsed = JSON.parse(body) as { contents?: string };
+      if (!parsed.contents) throw new Error('proxy returned no contents');
+      return parsed.contents;
+    },
+  },
+  {
+    buildUrl: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    extract: (body) => body,
+  },
+  {
+    buildUrl: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    extract: (body) => body,
+  },
+];
+
+/** A real LaneTalk page is ~150KB; proxy error pages are a few bytes. */
+const MIN_HTML_BYTES = 1000;
+
+/**
+ * Some proxies answer 200 with their own error/rate-limit page, which can be
+ * large enough to pass a size check. Require a LaneTalk marker so we retry
+ * another endpoint instead of handing junk to the parser.
+ */
+function looksLikeLaneTalkPage(html: string): boolean {
+  return html.trim().length >= MIN_HTML_BYTES && /lanetalk/i.test(html);
+}
+
+export interface FetchLaneTalkOptions {
+  attempts?: number;
+  timeoutMs?: number;
+  retryDelayMs?: number;
+  /** Called before each attempt (0-based) so callers can show progress. */
+  onAttempt?: (attempt: number, total: number) => void;
+  fetchImpl?: typeof fetch;
+  sleep?: (ms: number) => Promise<void>;
+  proxies?: typeof LANETALK_PROXIES;
+}
+
+export async function fetchLaneTalkHTML(
+  url: string,
+  options: FetchLaneTalkOptions = {}
+): Promise<string> {
+  const {
+    attempts = 5,
+    timeoutMs = 9000,
+    retryDelayMs = 500,
+    onAttempt,
+    fetchImpl = fetch,
+    sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
+    proxies = LANETALK_PROXIES,
+  } = options;
+
+  let lastError = 'unknown error';
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const proxy = proxies[attempt % proxies.length];
+    onAttempt?.(attempt, attempts);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetchImpl(proxy.buildUrl(url), { signal: controller.signal });
+
+      if (!response.ok) {
+        throw new Error(`proxy returned ${response.status}`);
+      }
+
+      const html = proxy.extract(await response.text());
+
+      if (!looksLikeLaneTalkPage(html)) {
+        throw new Error('proxy returned an error page instead of LaneTalk content');
+      }
+
+      return html;
+    } catch (error) {
+      if (error instanceof Error) {
+        lastError =
+          error.name === 'AbortError'
+            ? `timed out after ${timeoutMs / 1000}s`
+            : error.message;
+      }
+
+      if (attempt < attempts - 1) {
+        await sleep(retryDelayMs);
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw new Error(
+    `Could not reach LaneTalk after ${attempts} tries (${lastError}). ` +
+      'The public CORS proxy is having trouble — please try again in a moment.'
+  );
+}
